@@ -101,16 +101,16 @@ void UserInput()
     case S_KEY:
       for (i = 0; i < CHECK_ROWS; i++)
 	{
-	  if (strchr(*(menuChecks + i), 'x') != NULL)
+	  if (strchr(menuChecks[i], 'x') != NULL)
 	    {
-	      *(menuChecks + i) = "[ ]";
+	      menuChecks[i] = "[ ]";
 	      if (i == CHECK_ROWS-1)
 		{
-		  *(menuChecks + 0) = "[x]";
+		  menuChecks[0] = "[x]";
 		  currentCheck = 0;
 		} else
 		{
-		  *(menuChecks + ++i) = "[x]";
+		  menuChecks[++i] = "[x]";
 		  currentCheck = i;
 		}
 	    }
@@ -120,16 +120,16 @@ void UserInput()
     case W_KEY:
       for (i = 0; i < CHECK_ROWS; i++)
 	{
-	  if (strchr(*(menuChecks + i), 'x') != NULL)
+	  if (strchr(menuChecks[i], 'x') != NULL)
 	    {
-	      *(menuChecks + i) = "[ ]";
+	      menuChecks[i] = "[ ]";
 	      if (i == 0)
 		{
-		  *(menuChecks + 3) = "[x]";
+		  menuChecks[3] = "[x]";
 		  currentCheck = 3;
 		} else
 		{
-		  *(menuChecks + --i) = "[x]";
+		  menuChecks[--i] = "[x]";
 		  currentCheck = i;
 		}
 	    }
