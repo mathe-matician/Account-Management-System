@@ -33,6 +33,7 @@ char *menuOptions[4] =
   };
 
 int i, j;
+int offset;
 int currentCheck;
 char menuUserInput;
 int programRunning = 1;
@@ -97,7 +98,7 @@ void UserInput(void)
 	  break;
 	 }
       break;
-
+      
 	  //case s key is pressed
 
     case S_KEY:
@@ -120,7 +121,8 @@ void UserInput(void)
       break;
 
     case W_KEY:
-      for (i = 0; i < CHECK_ROWS; i++)
+      
+      for (i = 0; i < 4; i++)
 	{
 	  if (strchr(menuChecks[i], 'x') != NULL)
 	    {
@@ -129,17 +131,19 @@ void UserInput(void)
 		{
 		  menuChecks[3] = "[x]";
 		  currentCheck = 3;
-		} else
-		{
-		  menuChecks[--i] = "[x]";
-		  currentCheck = i;
+		  break;
 		}
+	      menuChecks[--i] = "[x]";
+	      currentCheck = i;
+		
+	      
 	    }
 	}
       break;
 	  //prevents fall through
     case '\n':
       break;
+      
     default:
       break;
     }
