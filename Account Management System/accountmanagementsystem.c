@@ -9,11 +9,10 @@
 #define CHECK_ROWS 4
 #define CR 13 //carriage return
 
-
-void PrintMenu();
-void RunProg();
-void RefreshScreen();
-void UserInput();
+void PrintMenu(void);
+void RunProg(void);
+void RefreshScreen(void);
+void UserInput(void);
 
 enum { NewAccount = 0, UpdateAccount, Transaction, Exit };
 
@@ -38,15 +37,18 @@ int currentCheck;
 char menuUserInput;
 int programRunning = 1;
 
+/* #include "accountheaders.h" */
+/* #include "accountvars.h" */
+
 int main()
-{
+{ 
   currentCheck = 0;
   
   RunProg();
   return 0;
 }
 
-void RunProg()
+void RunProg(void)
 {
   while(programRunning)
     {
@@ -55,7 +57,7 @@ void RunProg()
     }
 }
 
-void PrintMenu()
+void PrintMenu(void)
 {
   printf("%s %s\n", menuChecks[0], menuOptions[0]);
   printf("%s %s\n", menuChecks[1], menuOptions[1]);
@@ -63,7 +65,7 @@ void PrintMenu()
   printf("%s %s\n", menuChecks[3], menuOptions[3]);
 }
 
-void UserInput()
+void UserInput(void)
 {
   menuUserInput = fgetc(stdin);
   switch(menuUserInput)
@@ -143,7 +145,7 @@ void UserInput()
     }
 }
 
-void RefreshScreen()
+void RefreshScreen(void)
 {
 #if defined(_WIN32)
   system("cls");
@@ -152,3 +154,5 @@ void RefreshScreen()
 #endif
   PrintMenu();
 }
+
+
