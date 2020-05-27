@@ -4,6 +4,15 @@
 #define W_KEY 119
 #define CHECK_ROWS 4
 #define CR 13 //carriage return
+#define MAX_NAME 256
+#define MAX_HASH_SIZE 26
+
+struct customerName {
+  char *firstName;
+  char *lastName;
+  unsigned int age;
+  int ID;
+} CustomerName;
 
 enum { NewAccount = 0, UpdateAccount, Transaction, Exit };
 
@@ -21,6 +30,14 @@ char *menuOptions[4] =
    "View/update a current account",
    "Make transaction",
    "Exit"
+  };
+
+char *createNewAccount[] =
+  {
+   "First Name: ",
+   "Last Name: ",
+   "Age: ",
+   "Phone: "
   };
 
 int i, j;

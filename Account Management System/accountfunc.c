@@ -15,6 +15,13 @@ void RunProg(void)
     }
 }
 
+void createNewCustomer(char *f_name, char *l_name, unsigned int age)
+{
+  //set ID as well
+  
+  CustomerName *head[MAX_HASH_SIZE] = {NULL};
+}
+
 void PrintMenu(void)
 {
   printf("%s %s\n", menuChecks[0], menuOptions[0]);
