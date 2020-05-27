@@ -15,11 +15,21 @@ void RunProg(void)
     }
 }
 
-void createNewCustomer(char *f_name, char *l_name, unsigned int age)
-{
-  //set ID as well
+//https://stackoverflow.com/questions/31930046/what-is-a-hash-table-and-how-do-you-make-it-in-c
+
+void createNewCustomer(int key, char *f_name, char *l_name, unsigned int age)
+{ 
   
-  CustomerName *head[MAX_HASH_SIZE] = {NULL};
+}
+
+int hash(const char *buffer)
+{
+  return tolower(buffer[0]) - 'a';
+}
+
+void getNewCustomerInfo()
+{
+  
 }
 
 void PrintMenu(void)

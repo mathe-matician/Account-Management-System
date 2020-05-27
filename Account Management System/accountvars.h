@@ -11,8 +11,11 @@ struct customerName {
   char *firstName;
   char *lastName;
   unsigned int age;
+  int accountBalance;
   int ID;
 } CustomerName;
+
+CustomerName *head[MAX_HASH_SIZE] = {NULL};
 
 enum { NewAccount = 0, UpdateAccount, Transaction, Exit };
 
