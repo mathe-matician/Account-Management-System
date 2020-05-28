@@ -1,0 +1,23 @@
+IDIR =../include
+CC=gcc
+CFLAGS=-I$(IDIR)
+
+ODIR=obj
+
+_DEPS = accountheaders.h accountvars.h
+DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
+
+_OBJ = accountmanagementsystem.o accountfunc.o
+OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
+
+
+$(ODIR)/%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+ams: $(OBJ)
+	$(CC) -o $@ $^ $(CFLAGS)
+
+.PHONY: clean
+
+clean:
+	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~ 

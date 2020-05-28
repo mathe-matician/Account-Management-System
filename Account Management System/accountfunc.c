@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h> //tolower()
 #include "accountheaders.h"
 #include "accountvars.h"
+#include <time.h>
 
 #ifndef ACCOUNTFUNCS_H
 #define ACCOUNTFUNCS_H
@@ -15,29 +17,76 @@ void RunProg(void)
     }
 }
 
-//https://stackoverflow.com/questions/31930046/what-is-a-hash-table-and-how-do-you-make-it-in-c
-
-void createNewCustomer(int key, char *f_name, char *l_name, unsigned int age)
-{ 
-  
-}
+//void createNewCustomer(int key, char *f_name, char *l_name, unsigned int age)
+//{ 
+//}
 
 int hash(const char *buffer)
 {
   return tolower(buffer[0]) - 'a';
 }
-
-void getNewCustomerInfo()
+/*
+void insert(int key, const char *f_name, const char *l_name, int age, int accountBalance)
 {
+  //try to instantiate a new customer to insert word
+  CustomerName *newCustPtr = malloc(sizeof(CustomerName));
+  if (newCustPtr == NULL)
+    {
+      fprintf(stderr, "Couldn't create customer\n");
+      return;
+    }
   
+  //apply args to newly malloc'ed customer
+  strcpy(newCustPtr->firstName, f_name);
+  strcpy(newCustPtr->lastName, l_name);
+  newCustPtr->_age = age;
+  newCustPtr->_accountBalance = accountBalance;
+
+  if (first[key] == NULL)
+    {
+      first[key] = newCustPtr;
+    } else
+    {
+      CustomerName *predptr = first[key];
+      while(true)
+	{
+	  //insert at tail
+	  if (predptr->next == NULL)
+	    {
+	      predptr->next = newCustPtr;
+	      break;
+	    }
+
+	  //update pointer
+	  predptr = predptr->next;
+	}
+    }
 }
+*/
 
 void PrintMenu(void)
 {
-  printf("%s %s\n", menuChecks[0], menuOptions[0]);
-  printf("%s %s\n", menuChecks[1], menuOptions[1]);
-  printf("%s %s\n", menuChecks[2], menuOptions[2]);
-  printf("%s %s\n", menuChecks[3], menuOptions[3]);
+  switch(menuFlag)
+    {
+    case 1:
+      printf("%s %s\n", menuChecks[0], menuOptions[0]);
+      printf("%s %s\n", menuChecks[1], menuOptions[1]);
+      printf("%s %s\n", menuChecks[2], menuOptions[2]);
+      printf("%s %s\n", menuChecks[3], menuOptions[3]);
+      break;
+    case 2:
+      //printf("%s\n", createNewAccount[0]);
+      for (int i = 0; i < 4; i++)
+	{
+	  printf("%s %s\n", menuChecks[i], createNewAccount[i]);
+	}
+      menuChecks[0] = "[x]";
+      break;
+    case 4:
+      printf("Case 4\n");
+      break;
+    }
+  
 }
 
 void UserInput(void)
@@ -57,7 +106,7 @@ void UserInput(void)
       switch(currentCheck)
 	{
 	case NewAccount:
-	  printf("New Account\n");
+	  MakeNewAccount();
 	  break;
 
         case UpdateAccount:
@@ -118,6 +167,11 @@ void UserInput(void)
     default:
       break;
     }
+}
+
+void MakeNewAccount(void)
+{
+  menuFlag = 2;
 }
 
 void RefreshScreen(void)

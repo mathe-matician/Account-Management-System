@@ -1,0 +1,2 @@
+CC=gcc
+OBJ= accountfunc.o accountmanagementsystem.o

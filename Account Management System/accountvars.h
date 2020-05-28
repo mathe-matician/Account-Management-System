@@ -7,17 +7,27 @@
 #define MAX_NAME 256
 #define MAX_HASH_SIZE 26
 
+int menuFlag = 1;
+
 struct customerName {
   char *firstName;
   char *lastName;
-  unsigned int age;
-  int accountBalance;
-  int ID;
+  unsigned int _age;
+  int _accountBalance;
 } CustomerName;
 
-CustomerName *head[MAX_HASH_SIZE] = {NULL};
+int hashedValue;
+//CustomerName *first[MAX_HASH_SIZE] = {NULL};
 
-enum { NewAccount = 0, UpdateAccount, Transaction, Exit };
+enum { NewAccount = 0,
+       UpdateAccount, //1
+       Transaction,//2  
+       Exit,//3
+       NA_FirstName,//4
+       NA_LastName,//5
+       NA_Age,//6
+       NA_AccountBalance//7
+};
 
 char *menuChecks[4] =
   {
@@ -35,7 +45,7 @@ char *menuOptions[4] =
    "Exit"
   };
 
-char *createNewAccount[] =
+char *createNewAccount[4] =
   {
    "First Name: ",
    "Last Name: ",
