@@ -5,28 +5,32 @@
 #define CHECK_ROWS 4
 #define CR 13 //carriage return
 #define MAX_NAME 256
-#define MAX_HASH_SIZE 26
+#define TABLE_SIZE 10
 
 int menuFlag = 1;
 
-struct customerName {
+char *fullNameInput;
+char *firstNameInput;
+char *lastNameInput;
+unsigned int ageInput;
+int accountBalanceInput;
+
+typedef struct customer {
+  char *fullName;
   char *firstName;
   char *lastName;
-  unsigned int _age;
-  int _accountBalance;
-} CustomerName;
+  unsigned int age;
+  unsigned int phoneNumber;
+  int accountBalance;
+} Customer;
 
-int hashedValue;
-//CustomerName *first[MAX_HASH_SIZE] = {NULL};
+//customer hash table
+Customer *hash_table[TABLE_SIZE];
 
 enum { NewAccount = 0,
        UpdateAccount, //1
        Transaction,//2  
-       Exit,//3
-       NA_FirstName,//4
-       NA_LastName,//5
-       NA_Age,//6
-       NA_AccountBalance//7
+       Exit//3
 };
 
 char *menuChecks[4] =
@@ -45,12 +49,13 @@ char *menuOptions[4] =
    "Exit"
   };
 
-char *createNewAccount[4] =
+char *createNewAccount[5] =
   {
    "First Name: ",
    "Last Name: ",
    "Age: ",
-   "Phone: "
+   "Phone: ",
+   "Initial Deposit: "
   };
 
 int i, j;
