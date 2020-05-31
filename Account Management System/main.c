@@ -85,8 +85,8 @@ void PrintMenu(void)
       printf("%s %s\n", menuChecks[3], menuOptions[3]);
       break;
     case 2:
-      //CreateNewCustomer();
-      PrintNewCustomerMenu();
+      CreateNewCustomer();
+      //PrintNewCustomerMenu();
       break;
     case 3:
       printf("%s\n", firstNameInput);
@@ -155,6 +155,13 @@ void PrintNewCustomerMenu(void)
 
 void CreateNewCustomer(void)
 {
+  for (int i = 0; i < 5; i++)
+    {
+      printf("%s", createNewAccount[i]);
+      fgets(firstNameInput, FIFTY, stdin);
+      ConvertName(firstNameInput);
+      printf("%s", firstNameInput);
+    }
   //printf("%s", createNewAccount[0]);
   //fgets(firstNameInput, FIFTY, stdin);
   //createNewAccount[1] = firstNameInput;
@@ -211,12 +218,12 @@ bool hash_table_delete(char *name)
 
 char *ConvertName(char *name)
 {
-  toupper(name[0]);
-  int nameLength = strlen(name);
-  for (int i = 1; i < nameLength; i++)
+  int nameLen = strlen(name);
+  for (int i = 0; i < nameLen; i++)
     {
-      tolower(name[i]);
+      name[i] = toupper(name[i]);
     }
+  
   return name;
 }
 
