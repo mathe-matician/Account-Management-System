@@ -51,6 +51,19 @@ char *createNewAccount[5] =
    "Initial Deposit: "
   };
 
+char *mainInstructions[23] =
+  {
+   "|----------------------------|",
+   "|","       Welcome to AMS       ","|",
+   "|","----------------------------","|",
+   "|","        Key Commands:       ","|",
+   "|","   W/S = move up and down   ","|",
+   "|","  D = Open selected option  ","|",
+   "|"," A = Return to previous menu","|",
+   "|","  ENTER = Confirm command   ","|",
+   "|----------------------------|"
+  };
+
 int main()
 {
   init_hash_table();
@@ -79,6 +92,21 @@ void PrintMenu(void)
   switch(menuFlag)
     {
     case 1:
+      for (int i = 0; i < 23; i++)
+	{
+	  if ((i == 0) || (i == 22))
+	    {
+	      printf("%s\n", mainInstructions[i]);
+	      continue;
+	    }
+	  if ((i % 3) == 0)
+	    {
+	      printf("%s\n", mainInstructions[i]);
+	      continue;
+	    }
+	  printf("%s", mainInstructions[i]);
+	}
+      printf("\n");
       printf("%s %s\n", menuChecks[0], menuOptions[0]);
       printf("%s %s\n", menuChecks[1], menuOptions[1]);
       printf("%s %s\n", menuChecks[2], menuOptions[2]);
