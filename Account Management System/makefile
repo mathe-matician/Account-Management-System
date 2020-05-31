@@ -1,7 +1,7 @@
 CC=gcc
-OBJ= accountfunc.o accountmanagementsystem.o
+OBJ= main.o
 CFLAGS=-I.
-DEPS = accountvars.h accountheaders.h
+DEPS = funcdef.h
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)

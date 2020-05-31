@@ -1,18 +1,70 @@
-//#include <stdbool.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h> //tolower()
-#include "accountvars.h"
-#include "customer.h"
+#include "funcdef.h"
+
+#define ESC 27
+#define S_KEY 115
+#define D_KEY 100
+#define W_KEY 119
+#define CHECK_ROWS 4
+#define CR 13 //carriage return
+#define MAX_NAME 256
+
+int menuFlag = 1;
+int currentCheck = 0;
+int programRunning = 1;
+int userInputFlag = 0;
+
+enum { NewAccount = 0,
+       UpdateAccount, //1
+       Transaction,//2  
+       Exit//3
+};
+
+struct customer *hash_table[TABLE_SIZE];
+
+char *menuChecks[4] =
+  {
+   "[x]",
+   "[ ]",
+   "[ ]",
+   "[ ]"
+  };
+
+char *menuOptions[4] =
+  {
+   "Create new account",
+   "View/update a current account",
+   "Make transaction",
+   "Exit"
+  };
+
+char *createNewAccount[5] =
+  {
+   "First Name: ",
+   "Last Name: ",
+   "Age: ",
+   "Phone: ",
+   "Initial Deposit: "
+  };
+
+int main()
+{
+  init_hash_table();
+  
+  RunProg();
+  return 0;
+}
 
 void RunProg(void)
 {
-  //init_hash_table();
   while(programRunning)
     {
       RefreshScreen();
-      UserInput();
+      MainMenuInput();
     }
 }
 
@@ -34,12 +86,21 @@ void PrintMenu(void)
       break;
     case 2:
       //CreateNewCustomer();
+      PrintNewCustomerMenu();
       break;
-    case 4:
-      printf("Case 4\n");
+    case 3:
+      printf("%s\n", firstNameInput);
       break;
     }
   
+}
+
+void PrintMenuTest()
+{
+  printf("%s %s\n", menuChecks[0], menuOptions[0]);
+  printf("%s %s\n", menuChecks[1], menuOptions[1]);
+  printf("%s %s\n", menuChecks[2], menuOptions[2]);
+  printf("%s %s\n", menuChecks[3], menuOptions[3]);
 }
 
 //----------------------------
@@ -68,7 +129,7 @@ unsigned int hash(char *name)
 }
 
 //insert customer into hash table
-bool hash_table_insert(Customer *c)
+bool hash_table_insert(struct customer *c)
 {
   if (c == NULL) return false;
   int index = hash(c->fullName);
@@ -81,23 +142,45 @@ bool hash_table_insert(Customer *c)
   hash_table[index] = c;
   return true;
 }
-/*
+
+void PrintNewCustomerMenu(void)
+{
+  for (int i = 0; i < 5; i++)
+    {
+      printf("%s", createNewAccount[i]);
+      fgets(firstNameInput, FIFTY, stdin);
+      //printf("%s", createNewAccount[i]);
+    }
+}
+
 void CreateNewCustomer(void)
 {
-  printf("%s", createNewAccount[0]);
-  fgets(firstNameInput, MAX_NAME, stdin);
+  //printf("%s", createNewAccount[0]);
+  //fgets(firstNameInput, FIFTY, stdin);
+  //createNewAccount[1] = firstNameInput;
+  //printf("%s", createNewAccount[1]);
+  //fgets(lastNameInput, FIFTY, stdin);
+  //printf("%s", createNewAccount[2]);
+  //scanf("%u", &ageInput);
+  //printf("%s", createNewAccount[3]);
+  //scanf("%u", &phoneInput);
+  //menuFlag = 3;
+  //printf("%s", createNewAccount[1]);
+  //printf("%s", createNewAccount[2]);
+  //printf("%s", createNewAccount[3]);
+  //fgets(firstNameInput, MAX_NAME, stdin);
   //printf("\n"); fgets will print \n?
-  printf("%s", createNewAccount[1]);
-  fgets(lastNameInput, MAX_NAME, stdin);
+  //printf("%s", createNewAccount[1]);
+  //fgets(lastNameInput, MAX_NAME, stdin);
   //make sure first letters of first and last name are capital letters
-  lastNameInput = ConvertName(lastNameInput);
-  firstNameInput = ConvertName(firstNameInput);
-  fullNameInput = strcat(firstNameInput, lastNameInput);
+  //lastNameInput = ConvertName(lastNameInput);
+  //firstNameInput = ConvertName(firstNameInput);
+  //fullNameInput = strcat(firstNameInput, lastNameInput);
   
-  hash_table_insert(&fullNameInput);
-}*/
+  // hash_table_insert(&fullNameInput);
+}
 
-Customer *hash_table_lookup(char *name)
+struct customer *hash_table_lookup(char *name)
 {
   int index = hash(name);
   if (hash_table[index] != NULL &&
@@ -144,10 +227,8 @@ char *ConvertName(char *name)
 // and submenus
 //----------------------------
 
-void UserInput(void)
+void MainMenuInput(void)
 {
-  fflush(stdin); //flush the line buffer so we don't read extra characters
-  menuUserInput = fgetc(stdin);
   switch(menuUserInput)
     {
     case ESC:
@@ -181,7 +262,7 @@ void UserInput(void)
 	  //case s key is pressed
 
     case S_KEY:
-      for (i = 0; i < CHECK_ROWS; i++)
+      for (int i = 0; i < CHECK_ROWS; i++)
 	{
 	  if (strchr(menuChecks[i], 'x') != NULL)
 	    {
@@ -200,7 +281,7 @@ void UserInput(void)
       break;
 
     case W_KEY:
-      for (i = 0; i < CHECK_ROWS; i++)
+      for (int i = 0; i < CHECK_ROWS; i++)
 	{
 	  if (strchr(menuChecks[i], 'x') != NULL)
 	    {
@@ -222,6 +303,7 @@ void UserInput(void)
     default:
       break;
     }
+  menuUserInput = fgetc(stdin);
 }
 
 void MakeNewAccount(void)
