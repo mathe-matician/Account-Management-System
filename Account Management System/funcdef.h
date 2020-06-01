@@ -3,7 +3,7 @@
 #define FIFTY 50
 
 struct customer {
-  char fullName[FIFTY+FIFTY];
+  //char fullName[FIFTY+FIFTY];
   char firstName[FIFTY];
   char lastName[FIFTY];
   unsigned int age;
@@ -15,6 +15,10 @@ extern int menuFlag;
 extern int currentCheck;
 extern int programRunning;
 extern int userInputFlag;
+extern char *createNewAccount[];
+extern char *mainInstructions[];
+extern char *menuOptions[];
+extern char *menuChecks[];
 int accountBalanceInput;
 unsigned int phoneInput;
 unsigned int ageInput;
@@ -23,9 +27,10 @@ char fullNameInput[FIFTY+FIFTY];
 char firstNameInput[FIFTY];
 char lastNameInput[FIFTY];
 
+void PrintMainMenuInstructions(void);
 void PrintNewCustomerMenu(void);
-void PrintMenuTest(void);
-void PrintMenu(void);
+void PrintMainMenu(void);
+void PrintMenuController(void);
 void RunProg(void);
 void RefreshScreen(void);
 void MainMenuInput(void);

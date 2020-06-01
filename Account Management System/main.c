@@ -69,6 +69,7 @@ int main()
   init_hash_table();
   
   RunProg();
+
   return 0;
 }
 
@@ -82,17 +83,36 @@ void RunProg(void)
 }
 
 //----------------------------
-// Print Menu
+// Print Functions
 // menuFlag is set depending what option
 // is chosen from the beginning menu
 //----------------------------
 
-void PrintMenu(void)
+void PrintMenuController(void)
 {
   switch(menuFlag)
     {
     case 1:
-      for (int i = 0; i < 23; i++)
+      PrintMainMenuInstructions();
+      printf("%s %s\n", menuChecks[0], menuOptions[0]);
+      printf("%s %s\n", menuChecks[1], menuOptions[1]);
+      printf("%s %s\n", menuChecks[2], menuOptions[2]);
+      printf("%s %s\n", menuChecks[3], menuOptions[3]);
+      break;
+    case 2:
+      PrintMainMenuInstructions();
+      CreateNewCustomer();
+      break;
+    case 3:
+      
+      break;
+    }
+  
+}
+
+void PrintMainMenuInstructions(void)
+{
+  for (int i = 0; i < 23; i++)
 	{
 	  if ((i == 0) || (i == 22))
 	    {
@@ -106,29 +126,67 @@ void PrintMenu(void)
 	    }
 	  printf("%s", mainInstructions[i]);
 	}
-      printf("\n");
-      printf("%s %s\n", menuChecks[0], menuOptions[0]);
-      printf("%s %s\n", menuChecks[1], menuOptions[1]);
-      printf("%s %s\n", menuChecks[2], menuOptions[2]);
-      printf("%s %s\n", menuChecks[3], menuOptions[3]);
-      break;
-    case 2:
-      CreateNewCustomer();
-      //PrintNewCustomerMenu();
-      break;
-    case 3:
-      printf("%s\n", firstNameInput);
-      break;
-    }
-  
+  printf("\n");
 }
 
-void PrintMenuTest()
+void PrintMainMenu(void)
 {
   printf("%s %s\n", menuChecks[0], menuOptions[0]);
   printf("%s %s\n", menuChecks[1], menuOptions[1]);
   printf("%s %s\n", menuChecks[2], menuOptions[2]);
   printf("%s %s\n", menuChecks[3], menuOptions[3]);
+}
+
+void PrintNewCustomerMenu(void)
+{
+  for (int i = 0; i < 5; i++)
+    {
+      printf("%s", createNewAccount[i]);
+      fgets(firstNameInput, FIFTY, stdin);
+      //printf("%s", createNewAccount[i]);
+    }
+}
+
+void CreateNewCustomer(void)
+{
+  //allocate memory for new customer
+  //TABLE_SIZE += 1; (if deleted TABLE_SIZE -= 1)
+  /////////Are there any pitfalls in this? ^
+  //iterate through ui options
+  //get input from user and store it into the newly allocated struct customer
+  //after return ask if the information is correct, if not fix what field isn't
+  //struct customer *newCustomer = (struct customer*)malloc(sizeof(struct customer));
+  struct customer *newCustomer;
+  hash_table_insert(newCustomer);
+  printf("%s", createNewAccount[0]);
+  fgets(firstNameInput, FIFTY, stdin);
+  strncpy(newCustomer->firstName, firstNameInput, FIFTY);
+  printf("%s entered into hash\n", newCustomer->firstName);
+  free(newCustomer);
+  /*
+  printf("%s", createNewAccount[1]);
+  fgets(lastNameInput, FIFTY, stdin);
+  strncpy(newCustomer->lastName, lastNameInput, FIFTY);
+  printf("%s", createNewAccount[2]);
+  scanf("%u", &ageInput);
+  newCustomer->age = ageInput;
+  printf("%s", createNewAccount[3]);
+  scanf("%u", &phoneInput);
+  newCustomer->phoneNumber = phoneInput;
+  */
+  
+  //hash_table_insert(newCustomer);
+}
+
+char *ConvertName(char *name)
+{
+  int nameLen = strlen(name);
+  for (int i = 0; i < nameLen; i++)
+    {
+      name[i] = toupper(name[i]);
+    }
+  
+  return name;
 }
 
 //----------------------------
@@ -160,59 +218,15 @@ unsigned int hash(char *name)
 bool hash_table_insert(struct customer *c)
 {
   if (c == NULL) return false;
-  int index = hash(c->fullName);
+  int index = hash(c->firstName);
   if (hash_table[index] != NULL)
     {
       //do other stuff becuse this is a collision
       printf("Collision occured!\n");
-      return false;
+      return false;//temporary
     }
   hash_table[index] = c;
   return true;
-}
-
-void PrintNewCustomerMenu(void)
-{
-  for (int i = 0; i < 5; i++)
-    {
-      printf("%s", createNewAccount[i]);
-      fgets(firstNameInput, FIFTY, stdin);
-      //printf("%s", createNewAccount[i]);
-    }
-}
-
-void CreateNewCustomer(void)
-{
-  for (int i = 0; i < 5; i++)
-    {
-      printf("%s", createNewAccount[i]);
-      fgets(firstNameInput, FIFTY, stdin);
-      ConvertName(firstNameInput);
-      printf("%s", firstNameInput);
-    }
-  //printf("%s", createNewAccount[0]);
-  //fgets(firstNameInput, FIFTY, stdin);
-  //createNewAccount[1] = firstNameInput;
-  //printf("%s", createNewAccount[1]);
-  //fgets(lastNameInput, FIFTY, stdin);
-  //printf("%s", createNewAccount[2]);
-  //scanf("%u", &ageInput);
-  //printf("%s", createNewAccount[3]);
-  //scanf("%u", &phoneInput);
-  //menuFlag = 3;
-  //printf("%s", createNewAccount[1]);
-  //printf("%s", createNewAccount[2]);
-  //printf("%s", createNewAccount[3]);
-  //fgets(firstNameInput, MAX_NAME, stdin);
-  //printf("\n"); fgets will print \n?
-  //printf("%s", createNewAccount[1]);
-  //fgets(lastNameInput, MAX_NAME, stdin);
-  //make sure first letters of first and last name are capital letters
-  //lastNameInput = ConvertName(lastNameInput);
-  //firstNameInput = ConvertName(firstNameInput);
-  //fullNameInput = strcat(firstNameInput, lastNameInput);
-  
-  // hash_table_insert(&fullNameInput);
 }
 
 struct customer *hash_table_lookup(char *name)
@@ -221,6 +235,7 @@ struct customer *hash_table_lookup(char *name)
   if (hash_table[index] != NULL &&
       strncmp(hash_table[index]->firstName, name, TABLE_SIZE) == 0)
     {
+      printf("Found %s here!\n", hash_table[index]->firstName);
       return hash_table[index];
     } else
     {
@@ -242,17 +257,6 @@ bool hash_table_delete(char *name)
       fprintf(stderr, "Something went wrong when deleting...\n");
       return false;
     }
-}
-
-char *ConvertName(char *name)
-{
-  int nameLen = strlen(name);
-  for (int i = 0; i < nameLen; i++)
-    {
-      name[i] = toupper(name[i]);
-    }
-  
-  return name;
 }
 
 //----------------------------
@@ -354,5 +358,5 @@ void RefreshScreen(void)
 #else
   system("clear");
 #endif
-  PrintMenu();
+  PrintMenuController();
 }
