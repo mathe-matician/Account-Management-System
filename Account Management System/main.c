@@ -11,7 +11,7 @@
 #define W_KEY 119
 #define CHECK_ROWS 4
 #define CR 13 //carriage return
-#define MAX_NAME 256
+#define MAX_NAME 128
 
 int menuFlag = 1;
 int currentCheck = 0;
@@ -64,6 +64,8 @@ char *mainInstructions[23] =
    "|----------------------------|"
   };
 
+char *error_OverMax = "Error: Over max character length";
+
 int main()
 {
   init_hash_table();
@@ -104,10 +106,9 @@ void PrintMenuController(void)
       CreateNewCustomer();
       break;
     case 3:
-      
+      printf("%s\n", error_OverMax);
       break;
-    }
-  
+    }  
 }
 
 void PrintMainMenuInstructions(void)
@@ -149,20 +150,45 @@ void PrintNewCustomerMenu(void)
 
 void CreateNewCustomer(void)
 {
-  //allocate memory for new customer
-  //TABLE_SIZE += 1; (if deleted TABLE_SIZE -= 1)
-  /////////Are there any pitfalls in this? ^
-  //iterate through ui options
-  //get input from user and store it into the newly allocated struct customer
-  //after return ask if the information is correct, if not fix what field isn't
-  //struct customer *newCustomer = (struct customer*)malloc(sizeof(struct customer));
-  struct customer *newCustomer;
-  hash_table_insert(newCustomer);
+  unsigned int hashCustomer;
+  size_t len;
+  int theAge;
+  int thePhone;
+  int theDeposit;
+  const char newLine = '\n';
   printf("%s", createNewAccount[0]);
-  fgets(firstNameInput, FIFTY, stdin);
-  strncpy(newCustomer->firstName, firstNameInput, FIFTY);
-  printf("%s entered into hash\n", newCustomer->firstName);
-  free(newCustomer);
+  if (fgets(firstNameInput, MAX_NAME, stdin))
+    {
+      firstNameInput[strcspn(firstNameInput, "\n")] = 0;
+    }
+  printf("%s", createNewAccount[1]);
+  if (fgets(lastNameInput, MAX_NAME, stdin))
+    {
+      lastNameInput[strcspn(lastNameInput, "\n")] = 0;
+    }
+  printf("%s", createNewAccount[2]);
+  if (fgets(ageInput, MAX_AGE, stdin))
+    {
+      ageInput[strcspn(ageInput, "\n")] = 0;
+      theAge = atoi(ageInput);
+    }
+  printf("%s", createNewAccount[3]);
+  if (fgets(ageInput, MAX_PHONE, stdin))
+    {
+      phoneInput[strcspn(phoneInput, "\n")] = 0;
+      thePhone = atoi(phoneInput);
+    }
+  printf("%s", createNewAccount[4]);
+  if (fgets(accountBalanceInput, MAX_NAME, stdin))
+    {
+      accountBalanceInput[strcspn(accountBalanceInput, "\n")] = 0;
+      theDeposit = atoi(accountBalanceInput);
+    }
+
+  char *fullN = ConvertName_UpperCat(firstNameInput, lastNameInput);
+  printf("%s\n", fullN);
+  hashCustomer = hash(fullN);
+  
   /*
   printf("%s", createNewAccount[1]);
   fgets(lastNameInput, FIFTY, stdin);
@@ -178,8 +204,9 @@ void CreateNewCustomer(void)
   //hash_table_insert(newCustomer);
 }
 
-char *ConvertName(char *name)
+char *ConvertName_UpperCat(char *f_name, char *l_name)
 {
+  char *name = strcat(f_name, l_name);
   int nameLen = strlen(name);
   for (int i = 0; i < nameLen; i++)
     {
@@ -206,6 +233,7 @@ void init_hash_table()
 //hash the customer's name. the name = it's ascii values added up
 unsigned int hash(char *name)
 {
+  //ala cs50
   int hash = 0;
   for (int i = 0; name[i] != '\0'; i++)
     {

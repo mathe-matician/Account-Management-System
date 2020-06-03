@@ -1,14 +1,19 @@
 #include <stdbool.h>
-#define TABLE_SIZE 10
+//TABLE_SIZE: arbitrary amount of hash table entries
+//the table is set up to handle collisions through linked lists
+#define TABLE_SIZE 100
 #define FIFTY 50
+#define MAX_OPEN_DEPOSIT 100000
+#define MAX_PHONE 17
+#define MAX_AGE 4
 
 struct customer {
-  //char fullName[FIFTY+FIFTY];
   char firstName[FIFTY];
   char lastName[FIFTY];
   unsigned int age;
   unsigned int phoneNumber;
   int accountBalance;
+  struct customer *next;
 };
 
 extern int menuFlag;
@@ -19,12 +24,13 @@ extern char *createNewAccount[];
 extern char *mainInstructions[];
 extern char *menuOptions[];
 extern char *menuChecks[];
-int accountBalanceInput;
-unsigned int phoneInput;
-unsigned int ageInput;
+char accountBalanceInput[MAX_OPEN_DEPOSIT];
+char phoneInput[MAX_PHONE];
+char ageInput[MAX_AGE];
 char menuUserInput;
 char fullNameInput[FIFTY+FIFTY];
 char firstNameInput[FIFTY];
+char firstfirstfirst[FIFTY];
 char lastNameInput[FIFTY];
 
 void PrintMainMenuInstructions(void);
@@ -41,4 +47,4 @@ bool hash_table_insert(struct customer *c);
 void CreateNewCustomer(void);
 struct customer *hash_table_lookup(char *name);
 bool hash_table_delete(char *name);
-char *ConvertName(char *name);
+char *ConvertName_UpperCat(char *f_name, char *l_name);
