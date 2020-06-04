@@ -1,7 +1,0 @@
-{
-	aNewCust->firstName : Kaylen
-
-	aNewCust->lastName : Mathe
-
-	aNewCust->age : 24
-}
