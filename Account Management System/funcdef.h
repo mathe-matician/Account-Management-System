@@ -47,4 +47,4 @@ bool hash_table_insert(struct customer *c);
 void CreateNewCustomer(void);
 struct customer *hash_table_lookup(char *name);
 bool hash_table_delete(char *name);
-char *ConvertName_UpperCat(char *f_name, char *l_name);
+char *ConvertName_Upper(char *name);

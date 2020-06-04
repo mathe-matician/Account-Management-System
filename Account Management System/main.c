@@ -12,6 +12,7 @@
 #define CHECK_ROWS 4
 #define CR 13 //carriage return
 #define MAX_NAME 128
+#define getVariableName(var) #var
 
 int menuFlag = 1;
 int currentCheck = 0;
@@ -148,65 +149,90 @@ void PrintNewCustomerMenu(void)
     }
 }
 
+void eat_extra(void)
+{
+  //via spstanley - stackoverflow
+  //Q: "how to prevent the user from entering more data than the maximum limit?"
+  int ch;
+  //meaning we didn't find the null terminator
+  if (strchr(firstNameInput, '\n') == NULL)
+    {
+      //get each character up to the null terminator
+      while((ch = getchar()) != '\n')
+	{
+	  if (ch < 0) return;
+	}
+    }
+}
+
 void CreateNewCustomer(void)
 {
-  unsigned int hashCustomer;
-  size_t len;
+  FILE *filePtr;
   int theAge;
   int thePhone;
   int theDeposit;
-  const char newLine = '\n';
+  
+  struct customer *aNewCust = (struct customer*)malloc(sizeof(struct customer));
+  
   printf("%s", createNewAccount[0]);
   if (fgets(firstNameInput, MAX_NAME, stdin))
     {
-      firstNameInput[strcspn(firstNameInput, "\n")] = 0;
+      eat_extra();
+      
     }
   printf("%s", createNewAccount[1]);
   if (fgets(lastNameInput, MAX_NAME, stdin))
     {
-      lastNameInput[strcspn(lastNameInput, "\n")] = 0;
+      eat_extra();
     }
   printf("%s", createNewAccount[2]);
   if (fgets(ageInput, MAX_AGE, stdin))
     {
-      ageInput[strcspn(ageInput, "\n")] = 0;
+      eat_extra(); 
       theAge = atoi(ageInput);
     }
   printf("%s", createNewAccount[3]);
   if (fgets(ageInput, MAX_PHONE, stdin))
     {
-      phoneInput[strcspn(phoneInput, "\n")] = 0;
+      eat_extra();
       thePhone = atoi(phoneInput);
     }
   printf("%s", createNewAccount[4]);
   if (fgets(accountBalanceInput, MAX_NAME, stdin))
     {
-      accountBalanceInput[strcspn(accountBalanceInput, "\n")] = 0;
+      eat_extra(); 
       theDeposit = atoi(accountBalanceInput);
     }
 
-  char *fullN = ConvertName_UpperCat(firstNameInput, lastNameInput);
-  printf("%s\n", fullN);
-  hashCustomer = hash(fullN);
+  strcpy(aNewCust->firstName, firstNameInput);
+  strcpy(aNewCust->lastName, lastNameInput);
+  aNewCust->age = theAge;
+  aNewCust->phoneNumber = thePhone;
+  aNewCust->accountBalance = theDeposit;
+  hash_table_insert(aNewCust);
+
+  ///save full hashtable as bin? hash_table
+  //then in init_hash_table load in file if one is found?
   
-  /*
-  printf("%s", createNewAccount[1]);
-  fgets(lastNameInput, FIFTY, stdin);
-  strncpy(newCustomer->lastName, lastNameInput, FIFTY);
-  printf("%s", createNewAccount[2]);
-  scanf("%u", &ageInput);
-  newCustomer->age = ageInput;
-  printf("%s", createNewAccount[3]);
-  scanf("%u", &phoneInput);
-  newCustomer->phoneNumber = phoneInput;
-  */
-  
-  //hash_table_insert(newCustomer);
+  //save data in file
+  filePtr = fopen("./testdata.txt", "w");
+  if (filePtr == NULL)
+    {
+      fprintf(stderr, "Error: Opening file NULL\n");
+      return;
+    }
+  fprintf(filePtr,
+	  "{\n\t%s : %s\n\t%s : %s\n\t%s : %d\n}\n",
+	  getVariableName(aNewCust->firstName),firstNameInput,
+	  getVariableName(aNewCust->lastName),lastNameInput,
+	  getVariableName(aNewCust->age),theAge);
+  fclose(filePtr);
+
+  free(aNewCust);
 }
 
-char *ConvertName_UpperCat(char *f_name, char *l_name)
+char *ConvertName_Upper(char *name)
 {
-  char *name = strcat(f_name, l_name);
   int nameLen = strlen(name);
   for (int i = 0; i < nameLen; i++)
     {
