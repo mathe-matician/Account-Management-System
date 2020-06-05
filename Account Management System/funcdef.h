@@ -5,7 +5,7 @@
 #define FIFTY 50
 #define MAX_OPEN_DEPOSIT 100000
 #define MAX_PHONE 17
-#define MAX_AGE 4
+#define MAX_AGE 8
 
 struct customer {
   char firstName[FIFTY];
@@ -16,7 +16,7 @@ struct customer {
   struct customer *next;
 };
 
-extern int menuFlag;
+extern int PrintMenuFlag;
 extern int currentCheck;
 extern int programRunning;
 extern int userInputFlag;
@@ -33,6 +33,9 @@ char firstNameInput[FIFTY];
 char firstfirstfirst[FIFTY];
 char lastNameInput[FIFTY];
 
+void UserInputController(void);
+void MakeNewAccount(void);
+void SubMenuInput_MakeNewAccount(void);
 void PrintMainMenuInstructions(void);
 void PrintNewCustomerMenu(void);
 void PrintMainMenu(void);

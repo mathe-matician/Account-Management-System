@@ -14,15 +14,22 @@
 #define MAX_NAME 128
 #define getVariableName(var) #var
 
-int menuFlag = 1;
+int MainMenuOrSubMenuFlag = 0;
+int PrintMenuFlag = 1;
 int currentCheck = 0;
 int programRunning = 1;
 int userInputFlag = 0;
+int toggleYesNoCancel = 0;
+
+enum { Menu_MainMenu = 0, Menu_SubMenu_MakeNewAccount};
+
+enum { Yes = 0, No, Cancel};
 
 enum { NewAccount = 0,
        UpdateAccount, //1
        Transaction,//2  
-       Exit//3
+       Exit,//3
+       NewAccount_Toggle,//4
 };
 
 struct customer *hash_table[TABLE_SIZE];
@@ -65,6 +72,11 @@ char *mainInstructions[23] =
    "|----------------------------|"
   };
 
+char *yesNo[6] =
+  {
+   "Yes","[x]","No","[ ]","Cancel","[ ]"
+  };
+
 char *error_OverMax = "Error: Over max character length";
 
 int main()
@@ -81,19 +93,19 @@ void RunProg(void)
   while(programRunning)
     {
       RefreshScreen();
-      MainMenuInput();
+      UserInputController();
     }
 }
 
 //----------------------------
 // Print Functions
-// menuFlag is set depending what option
+// PrintMenuFlag is set depending what option
 // is chosen from the beginning menu
 //----------------------------
 
 void PrintMenuController(void)
 {
-  switch(menuFlag)
+  switch(PrintMenuFlag)
     {
     case 1:
       PrintMainMenuInstructions();
@@ -203,7 +215,15 @@ void CreateNewCustomer(void)
       eat_extra(); 
       theDeposit = atoi(accountBalanceInput);
     }
-
+  
+  printf("\nIs the above information correct?\n");
+  for (int i = 0; i < 6; i++)
+    {
+      printf("%s ", yesNo[i]);
+    }
+  //wait to confirm if correct?
+  SubMenuInput_MakeNewAccount();
+  
   strcpy(aNewCust->firstName, firstNameInput);
   strcpy(aNewCust->lastName, lastNameInput);
   aNewCust->age = theAge;
@@ -227,7 +247,6 @@ void CreateNewCustomer(void)
 	  getVariableName(aNewCust->lastName),lastNameInput,
 	  getVariableName(aNewCust->age),theAge);
   fclose(filePtr);
-
   free(aNewCust);
 }
 
@@ -319,7 +338,19 @@ bool hash_table_delete(char *name)
 // handles input from main menu
 // and submenus
 //----------------------------
-
+void UserInputController(void)
+{
+  switch(MainMenuOrSubMenuFlag)
+    {
+    case Menu_MainMenu:
+      MainMenuInput();
+      break;
+    case Menu_SubMenu_MakeNewAccount:
+      SubMenuInput_MakeNewAccount();
+      //printf("SubMenu Flag active...\n");
+      break;
+    }
+}
 void MainMenuInput(void)
 {
   switch(menuUserInput)
@@ -349,6 +380,7 @@ void MainMenuInput(void)
 	case Exit:
 	  programRunning = 0;
 	  break;
+	
 	 }
       break;
 
@@ -401,7 +433,51 @@ void MainMenuInput(void)
 
 void MakeNewAccount(void)
 {
-  menuFlag = 2;
+  PrintMenuFlag = 2;
+  //update user input menu flag
+  //this updates in UserInputController() 
+  MainMenuOrSubMenuFlag = Menu_SubMenu_MakeNewAccount;
+}
+
+void SubMenuInput_MakeNewAccount(void)
+{
+  switch(menuUserInput)
+    {
+    case D_KEY:
+      for (int i = 1; i <= 5; i+2)
+	{
+	  if (strchr(yesNo[i], 'x') != NULL)
+	    {
+	      if (i == 5)
+		{
+		  yesNo[5] = "[ ]";
+		  yesNo[1] = "[x]";
+		  toggleYesNoCancel = 0;
+		} else
+		{
+		  yesNo[i] = "[ ]";
+		  yesNo[i+2] = "[x]";
+		  toggleYesNoCancel = i+2;
+		}
+	    }
+	}
+      break;
+    case CR:
+      switch(toggleYesNoCancel)
+	{
+	case Yes:
+	  printf("YES!\n");
+	  break;
+	case No:
+	  printf("NO!\n");
+	  break;
+	case Cancel:
+	  printf("CANCEL!\n");
+	  break;
+	}
+      break;
+    }
+  menuUserInput = fgetc(stdin);
 }
 
 //reprints menu over itself in terminal
