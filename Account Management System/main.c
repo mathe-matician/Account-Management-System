@@ -82,7 +82,7 @@ char *error_OverMax = "Error: Over max character length";
 int main()
 {
   init_hash_table();
-  
+
   RunProg();
 
   return 0;
@@ -119,7 +119,14 @@ void PrintMenuController(void)
       CreateNewCustomer();
       break;
     case 3:
-      printf("%s\n", error_OverMax);
+      //wait to confirm if correct?
+      MainMenuOrSubMenuFlag = Menu_SubMenu_MakeNewAccount;
+      printf("\nIs the above information correct?\n");
+      for (int i = 0; i < 6; i++)
+	{
+	  printf("%s ", yesNo[i]);
+	}
+      SubMenuInput_MakeNewAccount();
       break;
     }  
 }
@@ -215,7 +222,8 @@ void CreateNewCustomer(void)
       eat_extra(); 
       theDeposit = atoi(accountBalanceInput);
     }
-  
+  PrintMenuFlag = 3;
+  /*
   printf("\nIs the above information correct?\n");
   for (int i = 0; i < 6; i++)
     {
@@ -223,7 +231,8 @@ void CreateNewCustomer(void)
     }
   //wait to confirm if correct?
   SubMenuInput_MakeNewAccount();
-  
+  */
+  //put into a new function to run after confirming from the new print menu
   strcpy(aNewCust->firstName, firstNameInput);
   strcpy(aNewCust->lastName, lastNameInput);
   aNewCust->age = theAge;
@@ -436,44 +445,29 @@ void MakeNewAccount(void)
   PrintMenuFlag = 2;
   //update user input menu flag
   //this updates in UserInputController() 
-  MainMenuOrSubMenuFlag = Menu_SubMenu_MakeNewAccount;
 }
 
 void SubMenuInput_MakeNewAccount(void)
 {
   switch(menuUserInput)
     {
-    case D_KEY:
-      for (int i = 1; i <= 5; i+2)
+    case S_KEY:
+      for (int i = 1; i <= 5; i+=2)
 	{
 	  if (strchr(yesNo[i], 'x') != NULL)
 	    {
+	      yesNo[i] = "[ ]";
 	      if (i == 5)
 		{
-		  yesNo[5] = "[ ]";
 		  yesNo[1] = "[x]";
 		  toggleYesNoCancel = 0;
 		} else
 		{
-		  yesNo[i] = "[ ]";
-		  yesNo[i+2] = "[x]";
-		  toggleYesNoCancel = i+2;
+		  i+=2;
+		  yesNo[i] = "[x]";
+		  toggleYesNoCancel = i++;
 		}
 	    }
-	}
-      break;
-    case CR:
-      switch(toggleYesNoCancel)
-	{
-	case Yes:
-	  printf("YES!\n");
-	  break;
-	case No:
-	  printf("NO!\n");
-	  break;
-	case Cancel:
-	  printf("CANCEL!\n");
-	  break;
 	}
       break;
     }

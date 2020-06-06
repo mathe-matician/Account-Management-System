@@ -1,0 +1,7 @@
+{
+	aNewCust->firstName : Zach
+
+	aNewCust->lastName : Mathe
+
+	aNewCust->age : 321
+}
