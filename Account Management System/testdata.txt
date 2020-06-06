@@ -3,5 +3,5 @@
 
 	aNewCust->lastName : Mathe
 
-	aNewCust->age : 321
+	aNewCust->age : 31
 }

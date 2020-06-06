@@ -120,15 +120,20 @@ void PrintMenuController(void)
       break;
     case 3:
       //wait to confirm if correct?
-      MainMenuOrSubMenuFlag = Menu_SubMenu_MakeNewAccount;
-      printf("\nIs the above information correct?\n");
-      for (int i = 0; i < 6; i++)
-	{
-	  printf("%s ", yesNo[i]);
-	}
-      SubMenuInput_MakeNewAccount();
+      
+      
+      //SubMenuInput_MakeNewAccount();
       break;
     }  
+}
+
+void PrintYesNoCancel(void)
+{
+  printf("\nIs the above information correct?\n");
+  for (int i = 0; i < 6; i++)
+    {
+      printf("%s ", yesNo[i]);
+    }
 }
 
 void PrintMainMenuInstructions(void)
@@ -222,16 +227,17 @@ void CreateNewCustomer(void)
       eat_extra(); 
       theDeposit = atoi(accountBalanceInput);
     }
-  PrintMenuFlag = 3;
-  /*
-  printf("\nIs the above information correct?\n");
-  for (int i = 0; i < 6; i++)
-    {
-      printf("%s ", yesNo[i]);
-    }
-  //wait to confirm if correct?
+
+  //test to make sure menu was working
+  PrintYesNoCancel(); //reprint over itself?
+  MainMenuOrSubMenuFlag = Menu_SubMenu_MakeNewAccount;
+  //PrintMenuFlag = 3;
   SubMenuInput_MakeNewAccount();
-  */
+  //while ()
+  //{
+      //wait till user chooses an option Yes No or Cancel.
+  //}
+  
   //put into a new function to run after confirming from the new print menu
   strcpy(aNewCust->firstName, firstNameInput);
   strcpy(aNewCust->lastName, lastNameInput);
@@ -468,6 +474,20 @@ void SubMenuInput_MakeNewAccount(void)
 		  toggleYesNoCancel = i++;
 		}
 	    }
+	}
+      break;
+    case D_KEY:
+      switch(toggleYesNoCancel)
+	{
+	case 0:
+	  printf("YESYES\n");
+	  break;
+	case 1:
+	  PrintMenuFlag = 2;
+	  break;
+	case 2:
+	  PrintMenuFlag = 1;
+	  break;
 	}
       break;
     }
