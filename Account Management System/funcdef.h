@@ -33,6 +33,7 @@ char firstNameInput[FIFTY];
 char firstfirstfirst[FIFTY];
 char lastNameInput[FIFTY];
 
+void PrintYesNoCancel(void);
 void UserInputController(void);
 void MakeNewAccount(void);
 void SubMenuInput_MakeNewAccount(void);

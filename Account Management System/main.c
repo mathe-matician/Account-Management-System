@@ -20,6 +20,8 @@ int currentCheck = 0;
 int programRunning = 1;
 int userInputFlag = 0;
 int toggleYesNoCancel = 0;
+int firstTimeThroughFlag = 1;
+int ifYesFlag = 0;
 
 enum { Menu_MainMenu = 0, Menu_SubMenu_MakeNewAccount};
 
@@ -120,9 +122,8 @@ void PrintMenuController(void)
       break;
     case 3:
       //wait to confirm if correct?
-      
-      
-      //SubMenuInput_MakeNewAccount();
+      PrintYesNoCancel();
+      SubMenuInput_MakeNewAccount();
       break;
     }  
 }
@@ -195,14 +196,12 @@ void CreateNewCustomer(void)
   int theAge;
   int thePhone;
   int theDeposit;
-  
   struct customer *aNewCust = (struct customer*)malloc(sizeof(struct customer));
   
   printf("%s", createNewAccount[0]);
   if (fgets(firstNameInput, MAX_NAME, stdin))
     {
-      eat_extra();
-      
+      eat_extra();      
     }
   printf("%s", createNewAccount[1]);
   if (fgets(lastNameInput, MAX_NAME, stdin))
@@ -227,41 +226,40 @@ void CreateNewCustomer(void)
       eat_extra(); 
       theDeposit = atoi(accountBalanceInput);
     }
-
-  //test to make sure menu was working
-  PrintYesNoCancel(); //reprint over itself?
+  PrintMenuFlag = 3;
+  
   MainMenuOrSubMenuFlag = Menu_SubMenu_MakeNewAccount;
-  //PrintMenuFlag = 3;
-  SubMenuInput_MakeNewAccount();
-  //while ()
-  //{
-      //wait till user chooses an option Yes No or Cancel.
-  //}
   
-  //put into a new function to run after confirming from the new print menu
-  strcpy(aNewCust->firstName, firstNameInput);
-  strcpy(aNewCust->lastName, lastNameInput);
-  aNewCust->age = theAge;
-  aNewCust->phoneNumber = thePhone;
-  aNewCust->accountBalance = theDeposit;
-  hash_table_insert(aNewCust);
-
-  ///save full hashtable as bin? hash_table
-  //then in init_hash_table load in file if one is found?
-  
-  //save data in file
-  filePtr = fopen("./testdata.txt", "w");
-  if (filePtr == NULL)
+  //flag set in Submenu New Account user input
+  if (ifYesFlag)
     {
-      fprintf(stderr, "Error: Opening file NULL\n");
-      return;
+      //put into a new function to run after confirming from the new print menu
+      strcpy(aNewCust->firstName, firstNameInput);
+      strcpy(aNewCust->lastName, lastNameInput);
+      aNewCust->age = theAge;
+      aNewCust->phoneNumber = thePhone;
+      aNewCust->accountBalance = theDeposit;
+      hash_table_insert(aNewCust);
+  
+      ///save full hashtable as bin? hash_table
+      //then in init_hash_table load in file if one is found?
+  
+      //save data in file
+      filePtr = fopen("./testdata.txt", "w");
+      if (filePtr == NULL)
+	{
+	  fprintf(stderr, "Error: Opening file NULL\n");
+	  return;
+	}
+      fprintf(filePtr,
+	      "{\n\t%s : %s\n\t%s : %s\n\t%s : %d\n}\n",
+	      getVariableName(aNewCust->firstName),firstNameInput,
+	      getVariableName(aNewCust->lastName),lastNameInput,
+	      getVariableName(aNewCust->age),theAge);
+      fclose(filePtr);
+      ifYesFlag = 0;
     }
-  fprintf(filePtr,
-	  "{\n\t%s : %s\n\t%s : %s\n\t%s : %d\n}\n",
-	  getVariableName(aNewCust->firstName),firstNameInput,
-	  getVariableName(aNewCust->lastName),lastNameInput,
-	  getVariableName(aNewCust->age),theAge);
-  fclose(filePtr);
+  
   free(aNewCust);
 }
 
@@ -471,7 +469,7 @@ void SubMenuInput_MakeNewAccount(void)
 		{
 		  i+=2;
 		  yesNo[i] = "[x]";
-		  toggleYesNoCancel = i++;
+		  toggleYesNoCancel++;
 		}
 	    }
 	}
@@ -481,6 +479,10 @@ void SubMenuInput_MakeNewAccount(void)
 	{
 	case 0:
 	  printf("YESYES\n");
+	  //makes sure the input is saved into a file
+	  ifYesFlag = 1;
+	  MainMenuOrSubMenuFlag = Menu_MainMenu;
+	  PrintMenuFlag = 1;
 	  break;
 	case 1:
 	  PrintMenuFlag = 2;
