@@ -207,7 +207,7 @@ void eat_extra(void)
 
 void CreateNewCustomer(void)
 {
-  FILE *filePtr;
+  FILE *outfile;
   int theAge;
   int thePhone;
   int theDeposit;
@@ -245,45 +245,23 @@ void CreateNewCustomer(void)
   
   MainMenuOrSubMenuFlag = Menu_SubMenu_MakeNewAccount;
 
-  //need some sort of loop to wait till we get yes no cancel input
-  //then we can continue to the below storage /closure code.
-	  //put into a new function to run after confirming from the new print menu
+  //copy input data to struct
   strcpy(aNewCust->firstName, firstNameInput);
   strcpy(aNewCust->lastName, lastNameInput);
   aNewCust->age = theAge;
   aNewCust->phoneNumber = thePhone;
   aNewCust->accountBalance = theDeposit;
   hash_table_insert(aNewCust);
-  
-  ///save full hashtable as bin? hash_table
-  //then in init_hash_table load in file if one is found?
-  
-	  //save data in file
-  filePtr = fopen("./testdata.txt", "w");
-  if (filePtr == NULL)
-    {
-      fprintf(stderr, "Error: Opening file NULL\n");
-      return;
-    }
-  fprintf(filePtr,
-	  "{\n\t%s : %s\n\t%s : %s\n\t%s : %d\n}\n",
-	  getVariableName(aNewCust->firstName),firstNameInput,
-	  getVariableName(aNewCust->lastName),lastNameInput,
-	  getVariableName(aNewCust->age),theAge);
-  fclose(filePtr);
 
-
-  //test struct io
-  struct customer test = {"Zach", "Mathe", 31};
-  FILE *outfile;
   outfile = fopen("./structdata.bin", "wb");
   if (outfile == NULL)
     {
       fprintf(stderr, "Error: Opening file NULL\n");
       return;
     }
-  fwrite(&test, sizeof(struct customer), 1, outfile);
+  fwrite(aNewCust, sizeof(struct customer), 1, outfile);
   fclose(outfile);
+  
   free(aNewCust);
 }
 
@@ -301,6 +279,7 @@ char *ConvertName_Upper(char *name)
 //----------------------------
 // Hash table funcs
 //----------------------------
+//hash functions via CS50 video
 
 //makes all entries into the table NULL
 //when we query the table NULL entires are open to fill
@@ -315,7 +294,6 @@ void init_hash_table()
 //hash the customer's name. the name = it's ascii values added up
 unsigned int hash(char *name)
 {
-  //ala cs50
   int hash = 0;
   for (int i = 0; name[i] != '\0'; i++)
     {

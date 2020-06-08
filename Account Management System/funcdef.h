@@ -8,6 +8,7 @@
 #define MAX_AGE 8
 
 struct customer {
+  int id;
   char firstName[FIFTY];
   char lastName[FIFTY];
   unsigned int age;
