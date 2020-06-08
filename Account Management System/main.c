@@ -23,7 +23,7 @@ int toggleYesNoCancel = 0;
 int firstTimeThroughFlag = 1;
 int ifYesFlag = 0;
 int waitFlag = 1;
-enum { Menu_MainMenu = 0, Menu_SubMenu_MakeNewAccount};
+enum { Menu_MainMenu = 0, Menu_SubMenu_MakeNewAccount, Menu_SubMenu_UpdateAccount};
 
 enum { Yes = 0, No, Cancel};
 
@@ -113,7 +113,7 @@ void PrintMenuController(void)
       printf("%s %s\n", menuChecks[0], menuOptions[0]);
       printf("%s %s\n", menuChecks[1], menuOptions[1]);
       printf("%s %s\n", menuChecks[2], menuOptions[2]);
-      printf("%s %s\n", menuChecks[3], menuOptions[3]);
+      printf("%s %s\n", menuChecks[3], menuOptions[3]);    
       break;
     case 2:
       PrintMainMenuInstructions();
@@ -124,7 +124,28 @@ void PrintMenuController(void)
       PrintYesNoCancel();
       SubMenuInput_MakeNewAccount();
       break;
+    case 4:
+      LookUpCustomer();
+      break;
     }  
+}
+
+void LookUpCustomer(void)
+{
+  struct customer input;
+  //printf("%s found in file\n", input->firstName);
+  FILE *infile;
+  infile = fopen("./bin/structdata.bin", "rb");
+  if (infile == NULL)
+    {
+      fprintf(stderr, "Error: Opening file NULL\n");
+      return;
+    }
+  while (fread(&input, sizeof(struct customer), 1, infile))
+    {
+      printf("First Name: %sLast Name: %sAge: %d\nPhone: %d\nInitial Deposit: %d\nID: %d\n", input.firstName, input.lastName, input.age, input.phoneNumber, input.accountBalance, input.id);
+    }
+  fclose(infile);
 }
 
 void PrintYesNoCancel(void)
@@ -140,11 +161,9 @@ void PrintYesNoCancel(void)
     }
   while (fread(&input, sizeof(struct customer), 1, infile))
     {
-      printf("First Name: %sLast Name: %sAge: %d\nPhone: %d\nInitial Deposit: %d\n", input.firstName, input.lastName, input.age, input.phoneNumber, input.accountBalance);
+      printf("First Name: %sLast Name: %sAge: %d\nPhone: %d\nInitial Deposit: %d\nID: %d\n", input.firstName, input.lastName, input.age, input.phoneNumber, input.accountBalance, input.id);
     }
   fclose(infile);
-  /*
-    printf("First Name: %sLast Name: %sAge: %d\nPhone: %d\nInitial Deposit: %d\n", input->firstName, input->lastName, input->age, input->phoneNumber, input->accountBalance);*/
   
   printf("\nIs the above information correct?\n");
   for (int i = 0; i < 6; i++)
@@ -208,13 +227,12 @@ void eat_extra(void)
 
 void CreateNewCustomer(void)
 {
-  FILE *outfile;
+  //FILE *outfile;
   int theAge;
   int thePhone;
   int theDeposit;
   struct customer *aNewCust = (struct customer*)malloc(sizeof(struct customer));
-  //struct customer cust;
-  
+  //struct customer aNewCust;  
   printf("%s", createNewAccount[0]);
   if (fgets(firstNameInput, MAX_NAME, stdin))
     {
@@ -232,7 +250,7 @@ void CreateNewCustomer(void)
       theAge = atoi(ageInput);
     }
   printf("%s", createNewAccount[3]);
-  if (fgets(ageInput, MAX_PHONE, stdin))
+  if (fgets(phoneInput, MAX_PHONE, stdin))
     {
       eat_extra();
       thePhone = atoi(phoneInput);
@@ -253,17 +271,14 @@ void CreateNewCustomer(void)
   aNewCust->age = theAge;
   aNewCust->phoneNumber = thePhone;
   aNewCust->accountBalance = theDeposit;
-  hash_table_insert(aNewCust);
+  bool temp = hash_table_insert(aNewCust);
+  if (temp == false)
+    printf("ERROR ENTERING INTO HASHTABLE\n");
 
-  //test regular struct
-  /*
-  strcpy(cust.firstName, firstNameInput);
-  strcpy(cust.lastName, lastNameInput);
-  cust.age = theAge;
-  cust.phoneNumber = thePhone;
-  cust.accountBalance = theDeposit;
-  hash_table_insert(&cust);
-  */  
+  //save individual files instead of large binary file for customers
+  FILE *outfile;
+  //fileString = strcat("./bin/", aNewCust->firstName);
+  //fileString = strcat(fileString, ".bin");
   outfile = fopen("./bin/structdata.bin", "wb");
   if (outfile == NULL)
     {
@@ -272,6 +287,7 @@ void CreateNewCustomer(void)
     }
   fwrite(aNewCust, sizeof(struct customer), 1, outfile);
   fclose(outfile);
+  
   free(aNewCust);
 }
 
@@ -299,6 +315,19 @@ void init_hash_table()
     {
       hash_table[i] = NULL;
     }
+
+  //struct customer *hash_table[TABLE_SIZE];
+  /*
+  FILE *infile;
+  infile = fopen("./bin/structdata.bin", "rb");
+  if (infile == NULL)
+    {
+      fprintf(stderr, "Error: Opening file NULL\n");
+      return;
+    }
+  fread(&hash_table, sizeof(struct customer), 1, infile);
+  fclose(infile);
+  */
 }
 
 //hash the customer's name. the name = it's ascii values added up
@@ -324,6 +353,22 @@ bool hash_table_insert(struct customer *c)
       return false;//temporary
     }
   hash_table[index] = c;
+
+  //save individual files instead of large binary file for customers
+  /*
+  FILE *outfile;
+  char *fileString;
+  fileString = strcat("./bin/", c->firstName);
+  fileString = strcat(fileString, ".bin");
+  outfile = fopen(fileString, "wb");
+  if (outfile == NULL)
+    {
+      fprintf(stderr, "Error: Opening file NULL\n");
+      return false;
+    }
+  fwrite(c, sizeof(struct customer), 1, outfile);
+  fclose(outfile);
+  */
   return true;
 }
 
@@ -374,6 +419,8 @@ void UserInputController(void)
       SubMenuInput_MakeNewAccount();
       //printf("SubMenu Flag active...\n");
       break;
+    case Menu_SubMenu_UpdateAccount:
+      break;
     }
 }
 void MainMenuInput(void)
@@ -396,6 +443,7 @@ void MainMenuInput(void)
 
         case UpdateAccount:
 	  printf("Update Account\n");
+	  PrintMenuFlag = 4;
 	  break;
 
 	case Transaction:

@@ -34,6 +34,7 @@ char firstNameInput[FIFTY];
 char firstfirstfirst[FIFTY];
 char lastNameInput[FIFTY];
 
+void LookUpCustomer(void);
 void PrintYesNoCancel(void);
 void UserInputController(void);
 void MakeNewAccount(void);
