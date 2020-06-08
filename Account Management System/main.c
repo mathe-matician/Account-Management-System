@@ -86,7 +86,6 @@ int main()
   init_hash_table();
 
   RunProg();
-
   return 0;
 }
 
@@ -133,7 +132,7 @@ void PrintYesNoCancel(void)
   //test struct io
   struct customer input;
   FILE *infile;
-  infile = fopen("./structdata.bin", "rb");
+  infile = fopen("./bin/structdata.bin", "rb");
   if (infile == NULL)
     {
       fprintf(stderr, "Error: Opening file NULL\n");
@@ -141,9 +140,11 @@ void PrintYesNoCancel(void)
     }
   while (fread(&input, sizeof(struct customer), 1, infile))
     {
-      printf("First Name: %s\nLast Name: %s\nAge: %d\n", input.firstName, input.lastName, input.age);
+      printf("First Name: %sLast Name: %sAge: %d\nPhone: %d\nInitial Deposit: %d\n", input.firstName, input.lastName, input.age, input.phoneNumber, input.accountBalance);
     }
   fclose(infile);
+  /*
+    printf("First Name: %sLast Name: %sAge: %d\nPhone: %d\nInitial Deposit: %d\n", input->firstName, input->lastName, input->age, input->phoneNumber, input->accountBalance);*/
   
   printf("\nIs the above information correct?\n");
   for (int i = 0; i < 6; i++)
@@ -212,6 +213,7 @@ void CreateNewCustomer(void)
   int thePhone;
   int theDeposit;
   struct customer *aNewCust = (struct customer*)malloc(sizeof(struct customer));
+  //struct customer cust;
   
   printf("%s", createNewAccount[0]);
   if (fgets(firstNameInput, MAX_NAME, stdin))
@@ -244,7 +246,7 @@ void CreateNewCustomer(void)
   PrintMenuFlag = 3;
   
   MainMenuOrSubMenuFlag = Menu_SubMenu_MakeNewAccount;
-
+  
   //copy input data to struct
   strcpy(aNewCust->firstName, firstNameInput);
   strcpy(aNewCust->lastName, lastNameInput);
@@ -253,7 +255,16 @@ void CreateNewCustomer(void)
   aNewCust->accountBalance = theDeposit;
   hash_table_insert(aNewCust);
 
-  outfile = fopen("./structdata.bin", "wb");
+  //test regular struct
+  /*
+  strcpy(cust.firstName, firstNameInput);
+  strcpy(cust.lastName, lastNameInput);
+  cust.age = theAge;
+  cust.phoneNumber = thePhone;
+  cust.accountBalance = theDeposit;
+  hash_table_insert(&cust);
+  */  
+  outfile = fopen("./bin/structdata.bin", "wb");
   if (outfile == NULL)
     {
       fprintf(stderr, "Error: Opening file NULL\n");
@@ -261,7 +272,6 @@ void CreateNewCustomer(void)
     }
   fwrite(aNewCust, sizeof(struct customer), 1, outfile);
   fclose(outfile);
-  
   free(aNewCust);
 }
 
