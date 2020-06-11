@@ -151,22 +151,7 @@ void LookUpCustomer(void)
 
 void PrintYesNoCancel(void)
 {
-  /*
-  //test struct io
-  struct customer input;
-  FILE *infile;
-  infile = fopen("./bin/structdata.bin", "rb");
-  if (infile == NULL)
-    {
-      fprintf(stderr, "Error: Opening file NULL\n");
-      return;
-    }
-  while (fread(&input, sizeof(struct customer), 1, infile))
-    {
-      printf("First Name: %sLast Name: %sAge: %d\nPhone: %d\nInitial Deposit: %d\nID: %d\n", input.firstName, input.lastName, input.age, input.phoneNumber, input.accountBalance, input.id);
-    }
-  fclose(infile);
-  */
+  HashFileLookup("Mathe");
   printf("\nIs the above information correct?\n");
   for (int i = 0; i < 6; i++)
     {
@@ -365,15 +350,34 @@ bool HashFileInsert(struct customer *c)
   fclose(filePtr);
 }
 
-struct customer *hash_table_lookup(char *name)
+struct customer *HashFileLookup(char *name)
 {
-  /*
   //multiple people under same last name handling
   FILE *filePtr;
+  struct customer fileCustomer;
+  int indexer = hash(name);
+  char finalPath[50];
+  char infile[12];
+  char *path = "./bin/";
+  char *extension = ".bin";
+  strcat(finalPath, path);
+  snprintf(infile, 12, "%d", indexer);
+  strcat(finalPath, infile);
+  strcat(finalPath, extension);
+  
   filePtr = fopen(finalPath, "rb");
+  if (filePtr == NULL)
+    {
+      fprintf(stderr, "Error: File NULL!\n");
+    }
 
+  while (fread(&fileCustomer, sizeof(struct customer), 1, filePtr))
+    {
+      printf("First Name: %sLast Name: %sAge: %d\nPhone: %d\nInitial Deposit: %d\nID: %d\n", fileCustomer.firstName, fileCustomer.lastName, fileCustomer.age, fileCustomer.phoneNumber, fileCustomer.accountBalance, fileCustomer.id);
+    }
+  
   fclose(filePtr);
-  */
+  
   int index = hash(name);
   if (hash_table[index] != NULL &&
       strncmp(hash_table[index]->firstName, name, TABLE_SIZE) == 0)
