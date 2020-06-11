@@ -355,13 +355,13 @@ struct customer *HashFileLookup(char *name)
   //multiple people under same last name handling
   FILE *filePtr;
   struct customer fileCustomer;
-  int indexer = hash(name);
+  int index = hash(name);
   char finalPath[50];
   char infile[12];
   char *path = "./bin/";
   char *extension = ".bin";
   strcat(finalPath, path);
-  snprintf(infile, 12, "%d", indexer);
+  snprintf(infile, 12, "%d", index);
   strcat(finalPath, infile);
   strcat(finalPath, extension);
   
@@ -377,17 +377,6 @@ struct customer *HashFileLookup(char *name)
     }
   
   fclose(filePtr);
-  
-  int index = hash(name);
-  if (hash_table[index] != NULL &&
-      strncmp(hash_table[index]->firstName, name, TABLE_SIZE) == 0)
-    {
-      printf("Found %s here!\n", hash_table[index]->firstName);
-      return hash_table[index];
-    } else
-    {
-      return NULL;
-    }
 }
 
 bool hash_table_delete(char *name)
