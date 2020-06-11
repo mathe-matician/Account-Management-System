@@ -1,20 +1,25 @@
 #include <stdbool.h>
 //TABLE_SIZE: arbitrary amount of hash table entries
 //the table is set up to handle collisions through linked lists
-#define TABLE_SIZE 100
+#define TABLE_SIZE 1000
 #define FIFTY 50
 #define MAX_OPEN_DEPOSIT 100000
 #define MAX_PHONE 17
 #define MAX_AGE 8
 
 struct customer {
-  int id;
   char firstName[FIFTY];
   char lastName[FIFTY];
+  int id;
   unsigned int age;
   unsigned int phoneNumber;
   int accountBalance;
-  struct customer *next;
+};
+
+struct header {
+  int hashed_firstName;
+  int hashed_lastName;
+  float version;
 };
 
 extern int PrintMenuFlag;
@@ -34,6 +39,8 @@ char firstNameInput[FIFTY];
 char firstfirstfirst[FIFTY];
 char lastNameInput[FIFTY];
 
+bool CheckForFile(char *filename);
+bool HashFileInsert(struct customer *c);
 void LookUpCustomer(void);
 void PrintYesNoCancel(void);
 void UserInputController(void);

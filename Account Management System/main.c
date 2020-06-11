@@ -13,6 +13,7 @@
 #define CR 13 //carriage return
 #define MAX_NAME 128
 #define getVariableName(var) #var
+//#define VERSION 0.5
 
 int MainMenuOrSubMenuFlag = 0;
 int PrintMenuFlag = 1;
@@ -150,6 +151,7 @@ void LookUpCustomer(void)
 
 void PrintYesNoCancel(void)
 {
+  /*
   //test struct io
   struct customer input;
   FILE *infile;
@@ -164,7 +166,7 @@ void PrintYesNoCancel(void)
       printf("First Name: %sLast Name: %sAge: %d\nPhone: %d\nInitial Deposit: %d\nID: %d\n", input.firstName, input.lastName, input.age, input.phoneNumber, input.accountBalance, input.id);
     }
   fclose(infile);
-  
+  */
   printf("\nIs the above information correct?\n");
   for (int i = 0; i < 6; i++)
     {
@@ -264,30 +266,22 @@ void CreateNewCustomer(void)
   PrintMenuFlag = 3;
   
   MainMenuOrSubMenuFlag = Menu_SubMenu_MakeNewAccount;
-  
+ 
   //copy input data to struct
   strcpy(aNewCust->firstName, firstNameInput);
   strcpy(aNewCust->lastName, lastNameInput);
   aNewCust->age = theAge;
   aNewCust->phoneNumber = thePhone;
   aNewCust->accountBalance = theDeposit;
-  bool temp = hash_table_insert(aNewCust);
-  if (temp == false)
-    printf("ERROR ENTERING INTO HASHTABLE\n");
-
-  //save individual files instead of large binary file for customers
-  FILE *outfile;
-  //fileString = strcat("./bin/", aNewCust->firstName);
-  //fileString = strcat(fileString, ".bin");
-  outfile = fopen("./bin/structdata.bin", "wb");
-  if (outfile == NULL)
-    {
-      fprintf(stderr, "Error: Opening file NULL\n");
-      return;
-    }
-  fwrite(aNewCust, sizeof(struct customer), 1, outfile);
-  fclose(outfile);
-  
+  char catName[100];
+  strcat(catName, firstNameInput);
+  strcat(catName, "::");
+  strcat(catName, lastNameInput);
+  strcat(catName, ";");
+  //delimeters to pick out first and last name later on when we use the look up function
+  aNewCust->id = hash(catName);
+  //create file with hashed name first::last;
+  HashFileInsert(aNewCust);
   free(aNewCust);
 }
 
@@ -303,9 +297,8 @@ char *ConvertName_Upper(char *name)
 }
 
 //----------------------------
-// Hash table funcs
+// Hash & File I/O funcs
 //----------------------------
-//hash functions via CS50 video
 
 //makes all entries into the table NULL
 //when we query the table NULL entires are open to fill
@@ -315,19 +308,6 @@ void init_hash_table()
     {
       hash_table[i] = NULL;
     }
-
-  //struct customer *hash_table[TABLE_SIZE];
-  /*
-  FILE *infile;
-  infile = fopen("./bin/structdata.bin", "rb");
-  if (infile == NULL)
-    {
-      fprintf(stderr, "Error: Opening file NULL\n");
-      return;
-    }
-  fread(&hash_table, sizeof(struct customer), 1, infile);
-  fclose(infile);
-  */
 }
 
 //hash the customer's name. the name = it's ascii values added up
@@ -341,39 +321,59 @@ unsigned int hash(char *name)
   return hash % TABLE_SIZE;
 }
 
-//insert customer into hash table
-bool hash_table_insert(struct customer *c)
+bool CheckForFile(char *filename)
 {
-  if (c == NULL) return false;
-  int index = hash(c->firstName);
-  if (hash_table[index] != NULL)
+  FILE *fptr;
+  if (fptr = fopen(filename, "rb"))
     {
-      //do other stuff becuse this is a collision
-      printf("Collision occured!\n");
-      return false;//temporary
-    }
-  hash_table[index] = c;
-
-  //save individual files instead of large binary file for customers
-  /*
-  FILE *outfile;
-  char *fileString;
-  fileString = strcat("./bin/", c->firstName);
-  fileString = strcat(fileString, ".bin");
-  outfile = fopen(fileString, "wb");
-  if (outfile == NULL)
-    {
-      fprintf(stderr, "Error: Opening file NULL\n");
+      fclose(fptr);
       return false;
     }
-  fwrite(c, sizeof(struct customer), 1, outfile);
-  fclose(outfile);
-  */
   return true;
+}
+
+bool HashFileInsert(struct customer *c)
+{
+  if (c == NULL)
+    {
+      fprintf(stderr, "Error: Insert to file failed. Customer NULL\n");
+      return false;
+    }
+  int index = hash(c->lastName);
+  char finalPath[50];
+  char outfile[12];
+  char *path = "./bin/";
+  char *extension = ".bin";
+  strcat(finalPath, path);
+  //snprintf(outfile, 12, "%d", c->id);
+  snprintf(outfile, 12, "%d", index);
+  strcat(finalPath, outfile);
+  strcat(finalPath, extension);
+  if (!CheckForFile(finalPath))
+    {
+      fprintf(stderr, "Error: Name exists already!! Collision!\n");
+      return false;
+    }
+  FILE *filePtr;
+  filePtr = fopen(finalPath, "wb");
+  if (filePtr == NULL)
+    {
+      fprintf(stderr, "Error: File NULL!\n");
+      return false;
+    }
+  fwrite(c, sizeof(struct customer), 1, filePtr);
+  fclose(filePtr);
 }
 
 struct customer *hash_table_lookup(char *name)
 {
+  /*
+  //multiple people under same last name handling
+  FILE *filePtr;
+  filePtr = fopen(finalPath, "rb");
+
+  fclose(filePtr);
+  */
   int index = hash(name);
   if (hash_table[index] != NULL &&
       strncmp(hash_table[index]->firstName, name, TABLE_SIZE) == 0)
@@ -548,6 +548,7 @@ void SubMenuInput_MakeNewAccount(void)
 	  PrintMenuFlag = 2;
 	  break;
 	case 2:
+	  MainMenuOrSubMenuFlag = Menu_MainMenu;
 	  PrintMenuFlag = 1;
 	  break;
 	}
