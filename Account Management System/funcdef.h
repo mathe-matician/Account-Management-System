@@ -39,7 +39,9 @@ char firstNameInput[FIFTY];
 char firstfirstfirst[FIFTY];
 char lastNameInput[FIFTY];
 
-struct customer *HashFileLookup(char *name);
+void eat_extra(void);
+void PrintLookUpCustomerQuestion(void);
+void HashFileLookup(char *name);
 bool CheckForFile(char *filename);
 bool HashFileInsert(struct customer *c);
 void LookUpCustomer(void);

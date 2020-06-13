@@ -126,7 +126,7 @@ void PrintMenuController(void)
       SubMenuInput_MakeNewAccount();
       break;
     case 4:
-      LookUpCustomer();
+      PrintLookUpCustomerQuestion();
       break;
     }  
 }
@@ -149,9 +149,20 @@ void LookUpCustomer(void)
   fclose(infile);
 }
 
+void PrintLookUpCustomerQuestion(void)
+{
+  char nameInput[MAX_NAME];
+  printf("Enter name to search: ");
+  if(fgets(nameInput, MAX_NAME, stdin))
+    {
+      eat_extra();
+    }
+  HashFileLookup(nameInput);
+}
+
 void PrintYesNoCancel(void)
 {
-  HashFileLookup("Mathe");
+  //HashFileLookup("Mathe");
   printf("\nIs the above information correct?\n");
   for (int i = 0; i < 6; i++)
     {
@@ -330,27 +341,27 @@ bool HashFileInsert(struct customer *c)
   char *path = "./bin/";
   char *extension = ".bin";
   strcat(finalPath, path);
-  //snprintf(outfile, 12, "%d", c->id);
   snprintf(outfile, 12, "%d", index);
   strcat(finalPath, outfile);
   strcat(finalPath, extension);
   if (!CheckForFile(finalPath))
     {
       fprintf(stderr, "Error: Name exists already!! Collision!\n");
+      //add something to restart the person entry process
       return false;
     }
   FILE *filePtr;
   filePtr = fopen(finalPath, "wb");
   if (filePtr == NULL)
     {
-      fprintf(stderr, "Error: File NULL!\n");
+      fprintf(stderr, "Error: File NULL! HashFileInsert\n");
       return false;
     }
   fwrite(c, sizeof(struct customer), 1, filePtr);
   fclose(filePtr);
 }
 
-struct customer *HashFileLookup(char *name)
+void HashFileLookup(char *name)
 {
   //multiple people under same last name handling
   FILE *filePtr;
@@ -365,17 +376,21 @@ struct customer *HashFileLookup(char *name)
   strcat(finalPath, infile);
   strcat(finalPath, extension);
   
+  if (CheckForFile(finalPath))
+    {
+      fprintf(stderr, "No customer with that name: HashFileLookup\n");
+    }
+  
   filePtr = fopen(finalPath, "rb");
   if (filePtr == NULL)
     {
-      fprintf(stderr, "Error: File NULL!\n");
+      fprintf(stderr, "Error: File NULL! HashFileLookup\n");
     }
 
   while (fread(&fileCustomer, sizeof(struct customer), 1, filePtr))
     {
       printf("First Name: %sLast Name: %sAge: %d\nPhone: %d\nInitial Deposit: %d\nID: %d\n", fileCustomer.firstName, fileCustomer.lastName, fileCustomer.age, fileCustomer.phoneNumber, fileCustomer.accountBalance, fileCustomer.id);
     }
-  
   fclose(filePtr);
 }
 
@@ -435,7 +450,7 @@ void MainMenuInput(void)
 	  break;
 
         case UpdateAccount:
-	  printf("Update Account\n");
+	  //printf("Update Account\n");
 	  PrintMenuFlag = 4;
 	  break;
 

@@ -1,6 +1,6 @@
 CC=gcc
 OBJ= main.o
-CFLAGS=-I.
+CFLAGS=-I. -g
 DEPS = funcdef.h
 
 %.o: %.c $(DEPS)
