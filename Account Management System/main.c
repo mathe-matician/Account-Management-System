@@ -9,11 +9,12 @@
 #define S_KEY 115
 #define D_KEY 100
 #define W_KEY 119
-#define CHECK_ROWS 4
+#define CHECK_ROWS 3
 #define CR 13 //carriage return
 #define MAX_NAME 128
 #define getVariableName(var) #var
 //#define VERSION 0.5
+
 
 int MainMenuOrSubMenuFlag = 0;
 int PrintMenuFlag = 1;
@@ -21,6 +22,7 @@ int currentCheck = 0;
 int programRunning = 1;
 int userInputFlag = 0;
 int toggleYesNoCancel = 0;
+int toggleUpdateAccount = 0;
 int firstTimeThroughFlag = 1;
 int ifYesFlag = 0;
 int waitFlag = 1;
@@ -29,27 +31,24 @@ enum { Menu_MainMenu = 0, Menu_SubMenu_MakeNewAccount, Menu_SubMenu_UpdateAccoun
 enum { Yes = 0, No, Cancel};
 
 enum { NewAccount = 0,
-       UpdateAccount, //1
-       Transaction,//2  
-       Exit,//3
-       NewAccount_Toggle,//4
+       UpdateAccount, //1  
+       Exit,//2
+       NewAccount_Toggle,//3
 };
 
 struct customer *hash_table[TABLE_SIZE];
 
-char *menuChecks[4] =
+char *menuChecks[3] =
   {
    "[x]",
-   "[ ]",
    "[ ]",
    "[ ]"
   };
 
-char *menuOptions[4] =
+char *menuOptions[3] =
   {
    "Create new account",
-   "View/update a current account",
-   "Make transaction",
+   "Select Account",
    "Exit"
   };
 
@@ -59,7 +58,7 @@ char *createNewAccount[5] =
    "Last Name: ",
    "Age: ",
    "Phone: ",
-   "Initial Deposit: "
+   "Deposit: "
   };
 
 char *mainInstructions[23] =
@@ -78,6 +77,11 @@ char *mainInstructions[23] =
 char *yesNo[6] =
   {
    "Yes","[x]","No","[ ]","Cancel","[ ]"
+  };
+
+char *updateAccount[6] =
+  {
+   "Edit Info", "[x]", "Delete Account", "[ ]", "Cancel", "[ ]"
   };
 
 char *error_OverMax = "Error: Over max character length";
@@ -113,8 +117,7 @@ void PrintMenuController(void)
       PrintMainMenuInstructions();
       printf("%s %s\n", menuChecks[0], menuOptions[0]);
       printf("%s %s\n", menuChecks[1], menuOptions[1]);
-      printf("%s %s\n", menuChecks[2], menuOptions[2]);
-      printf("%s %s\n", menuChecks[3], menuOptions[3]);    
+      printf("%s %s\n", menuChecks[2], menuOptions[2]);    
       break;
     case 2:
       PrintMainMenuInstructions();
@@ -122,42 +125,39 @@ void PrintMenuController(void)
       break;
     case 3:
       //wait to confirm if correct?
+      PrintMainMenuInstructions();
+      //show entered info
       PrintYesNoCancel();
       SubMenuInput_MakeNewAccount();
       break;
     case 4:
+      PrintMainMenuInstructions();
       PrintLookUpCustomerQuestion();
+      PrintMenuFlag = 5;
+      break;
+    case 5:
+      PrintMainMenuInstructions();
+      HashFileLookup(nameLookupInput);
+      PrintUpdateAccount();
+      SubMenuInput_EditAccount(); 
+      break;
+    case '\n':
       break;
     }  
 }
 
-void LookUpCustomer(void)
-{
-  struct customer input;
-  //printf("%s found in file\n", input->firstName);
-  FILE *infile;
-  infile = fopen("./bin/structdata.bin", "rb");
-  if (infile == NULL)
-    {
-      fprintf(stderr, "Error: Opening file NULL\n");
-      return;
-    }
-  while (fread(&input, sizeof(struct customer), 1, infile))
-    {
-      printf("First Name: %sLast Name: %sAge: %d\nPhone: %d\nInitial Deposit: %d\nID: %d\n", input.firstName, input.lastName, input.age, input.phoneNumber, input.accountBalance, input.id);
-    }
-  fclose(infile);
-}
-
 void PrintLookUpCustomerQuestion(void)
 {
-  char nameInput[MAX_NAME];
   printf("Enter name to search: ");
-  if(fgets(nameInput, MAX_NAME, stdin))
+  if(fgets(nameLookupInput, MAX_NAME, stdin))
     {
-      eat_extra();
+      eat_extra(nameLookupInput);
     }
-  HashFileLookup(nameInput);
+}
+
+void PrintUpdateAccount(void)
+{
+  printf("\n%s %s %s %s %s %s ", updateAccount[0],updateAccount[1],updateAccount[2],updateAccount[3],updateAccount[4],updateAccount[5]);
 }
 
 void PrintYesNoCancel(void)
@@ -194,7 +194,6 @@ void PrintMainMenu(void)
   printf("%s %s\n", menuChecks[0], menuOptions[0]);
   printf("%s %s\n", menuChecks[1], menuOptions[1]);
   printf("%s %s\n", menuChecks[2], menuOptions[2]);
-  printf("%s %s\n", menuChecks[3], menuOptions[3]);
 }
 
 void PrintNewCustomerMenu(void)
@@ -207,13 +206,13 @@ void PrintNewCustomerMenu(void)
     }
 }
 
-void eat_extra(void)
+void eat_extra(char *input)
 {
   //via spstanley - stackoverflow
   //Q: "how to prevent the user from entering more data than the maximum limit?"
   int ch;
   //meaning we didn't find the null terminator
-  if (strchr(firstNameInput, '\n') == NULL)
+  if (strchr(input, '\n') == NULL)
     {
       //get each character up to the null terminator
       while((ch = getchar()) != '\n')
@@ -234,29 +233,29 @@ void CreateNewCustomer(void)
   printf("%s", createNewAccount[0]);
   if (fgets(firstNameInput, MAX_NAME, stdin))
     {
-      eat_extra();      
+      eat_extra(firstNameInput);      
     }
   printf("%s", createNewAccount[1]);
   if (fgets(lastNameInput, MAX_NAME, stdin))
     {
-      eat_extra();
+      eat_extra(lastNameInput);
     }
   printf("%s", createNewAccount[2]);
   if (fgets(ageInput, MAX_AGE, stdin))
     {
-      eat_extra(); 
+      eat_extra(ageInput); 
       theAge = atoi(ageInput);
     }
   printf("%s", createNewAccount[3]);
   if (fgets(phoneInput, MAX_PHONE, stdin))
     {
-      eat_extra();
+      eat_extra(phoneInput);
       thePhone = atoi(phoneInput);
     }
   printf("%s", createNewAccount[4]);
   if (fgets(accountBalanceInput, MAX_NAME, stdin))
     {
-      eat_extra(); 
+      eat_extra(accountBalanceInput); 
       theDeposit = atoi(accountBalanceInput);
     }
   PrintMenuFlag = 3;
@@ -378,7 +377,8 @@ void HashFileLookup(char *name)
   
   if (CheckForFile(finalPath))
     {
-      fprintf(stderr, "No customer with that name: HashFileLookup\n");
+      fprintf(stderr, "No customer record found: HashFileLookup\n");
+      return;
     }
   
   filePtr = fopen(finalPath, "rb");
@@ -389,7 +389,7 @@ void HashFileLookup(char *name)
 
   while (fread(&fileCustomer, sizeof(struct customer), 1, filePtr))
     {
-      printf("First Name: %sLast Name: %sAge: %d\nPhone: %d\nInitial Deposit: %d\nID: %d\n", fileCustomer.firstName, fileCustomer.lastName, fileCustomer.age, fileCustomer.phoneNumber, fileCustomer.accountBalance, fileCustomer.id);
+      printf("First Name: %sLast Name: %sAge: %d\nPhone: %d\nAccount Balance: %d\nID: %d\n", fileCustomer.firstName, fileCustomer.lastName, fileCustomer.age, fileCustomer.phoneNumber, fileCustomer.accountBalance, fileCustomer.id);
     }
   fclose(filePtr);
 }
@@ -428,6 +428,7 @@ void UserInputController(void)
       //printf("SubMenu Flag active...\n");
       break;
     case Menu_SubMenu_UpdateAccount:
+      SubMenuInput_EditAccount();
       break;
     }
 }
@@ -452,10 +453,7 @@ void MainMenuInput(void)
         case UpdateAccount:
 	  //printf("Update Account\n");
 	  PrintMenuFlag = 4;
-	  break;
-
-	case Transaction:
-	  printf("Transaction\n");
+	  MainMenuOrSubMenuFlag = Menu_SubMenu_UpdateAccount;
 	  break;
 
 	case Exit:
@@ -494,8 +492,8 @@ void MainMenuInput(void)
 	      menuChecks[i] = "[ ]";
 	      if (i == 0)
 		{
-		  menuChecks[3] = "[x]";
-		  currentCheck = 3;
+		  menuChecks[2] = "[x]";
+		  currentCheck = 2;
 		  break;
 		}
 	      menuChecks[--i] = "[x]";
@@ -564,6 +562,53 @@ void SubMenuInput_MakeNewAccount(void)
     }
   menuUserInput = fgetc(stdin);
 }
+
+void SubMenuInput_EditAccount(void)
+{
+  switch(menuUserInput)
+    {
+    case S_KEY:
+      for (int i = 1; i <= 5; i+=2)
+	{
+	  if (strchr(updateAccount[i], 'x') != NULL)
+	    {
+	      updateAccount[i] = "[ ]";
+	      if (i == 5)
+		{
+		  updateAccount[1] = "[x]";
+		  toggleUpdateAccount = 0;
+		} else
+		{
+		  i+=2;
+		  updateAccount[i] = "[x]";
+		  toggleUpdateAccount++;
+		}
+	    }
+	}
+      break;
+    case D_KEY:
+      switch(toggleUpdateAccount)
+	{
+	case 0:
+	  //edit info
+	  MainMenuOrSubMenuFlag = Menu_MainMenu;
+	  PrintMenuFlag = 1;
+	  break;
+	case 1:
+	  //delete account
+	  PrintMenuFlag = 2;
+	  break;
+	case 2:
+	  //cancel
+	  MainMenuOrSubMenuFlag = Menu_MainMenu;
+	  PrintMenuFlag = 1;
+	  break;
+	}
+      break;
+    }
+  menuUserInput = fgetc(stdin);
+}
+
 
 //reprints menu over itself in terminal
 void RefreshScreen(void)

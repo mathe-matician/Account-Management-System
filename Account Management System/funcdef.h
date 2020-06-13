@@ -30,6 +30,7 @@ extern char *createNewAccount[];
 extern char *mainInstructions[];
 extern char *menuOptions[];
 extern char *menuChecks[];
+char nameLookupInput[50];
 char accountBalanceInput[MAX_OPEN_DEPOSIT];
 char phoneInput[MAX_PHONE];
 char ageInput[MAX_AGE];
@@ -39,7 +40,9 @@ char firstNameInput[FIFTY];
 char firstfirstfirst[FIFTY];
 char lastNameInput[FIFTY];
 
-void eat_extra(void);
+void PrintUpdateAccount(void);
+void SubMenuInput_EditAccount(void);
+void eat_extra(char *input);
 void PrintLookUpCustomerQuestion(void);
 void HashFileLookup(char *name);
 bool CheckForFile(char *filename);
