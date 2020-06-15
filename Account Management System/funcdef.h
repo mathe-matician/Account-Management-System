@@ -7,6 +7,7 @@
 #define MAX_PHONE 17
 #define MAX_AGE 8
 
+//each customer is 116 bytes
 struct customer {
   char firstName[FIFTY];
   char lastName[FIFTY];
@@ -14,11 +15,14 @@ struct customer {
   unsigned int age;
   unsigned int phoneNumber;
   int accountBalance;
+  //struct customer *next;
 };
 
 struct header {
   int hashed_firstName;
   int hashed_lastName;
+  unsigned int length;
+  long int seekToByte;
   float version;
 };
 

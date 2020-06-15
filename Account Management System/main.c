@@ -269,12 +269,14 @@ void CreateNewCustomer(void)
   aNewCust->phoneNumber = thePhone;
   aNewCust->accountBalance = theDeposit;
   char catName[100];
+  memset(catName, '\0', 100*sizeof(char));
   strcat(catName, firstNameInput);
   strcat(catName, "::");
   strcat(catName, lastNameInput);
   strcat(catName, ";");
   //delimeters to pick out first and last name later on when we use the look up function
   aNewCust->id = hash(catName);
+  //aNewCust->next = NULL;
   //create file with hashed name first::last;
   HashFileInsert(aNewCust);
   free(aNewCust);
@@ -336,6 +338,7 @@ bool HashFileInsert(struct customer *c)
     }
   int index = hash(c->lastName);
   char finalPath[50];
+  memset(finalPath, '\0', 50*sizeof(char));
   char outfile[12];
   char *path = "./bin/";
   char *extension = ".bin";
@@ -343,14 +346,17 @@ bool HashFileInsert(struct customer *c)
   snprintf(outfile, 12, "%d", index);
   strcat(finalPath, outfile);
   strcat(finalPath, extension);
+  /*
   if (!CheckForFile(finalPath))
     {
       fprintf(stderr, "Error: Name exists already!! Collision!\n");
-      //add something to restart the person entry process
       return false;
     }
+  */
   FILE *filePtr;
-  filePtr = fopen(finalPath, "wb");
+  //append OR write binary
+  //will append if multiple names exisit here
+  filePtr = fopen(finalPath, "ab");
   if (filePtr == NULL)
     {
       fprintf(stderr, "Error: File NULL! HashFileInsert\n");
@@ -367,6 +373,7 @@ void HashFileLookup(char *name)
   struct customer fileCustomer;
   int index = hash(name);
   char finalPath[50];
+  memset(finalPath, '\0', 50*sizeof(char));
   char infile[12];
   char *path = "./bin/";
   char *extension = ".bin";
@@ -387,9 +394,18 @@ void HashFileLookup(char *name)
       fprintf(stderr, "Error: File NULL! HashFileLookup\n");
     }
 
+  fseek(filePtr, 0L, SEEK_END);
+  long int fileSize = ftell(filePtr);
+
+  printf("File is %ld bytes\n", fileSize);
+  fseek(filePtr, 0L, SEEK_SET);
+  
   while (fread(&fileCustomer, sizeof(struct customer), 1, filePtr))
     {
+      printf("First name: %sLast name: %s\n", fileCustomer.firstName, fileCustomer.lastName);
+      /*
       printf("First Name: %sLast Name: %sAge: %d\nPhone: %d\nAccount Balance: %d\nID: %d\n", fileCustomer.firstName, fileCustomer.lastName, fileCustomer.age, fileCustomer.phoneNumber, fileCustomer.accountBalance, fileCustomer.id);
+      */
     }
   fclose(filePtr);
 }
