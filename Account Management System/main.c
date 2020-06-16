@@ -13,9 +13,8 @@
 #define CR 13 //carriage return
 #define MAX_NAME 128
 #define getVariableName(var) #var
-//#define VERSION 0.5
 
-
+int flag = 0;
 int MainMenuOrSubMenuFlag = 0;
 int PrintMenuFlag = 1;
 int currentCheck = 0;
@@ -79,9 +78,9 @@ char *yesNo[6] =
    "Yes","[x]","No","[ ]","Cancel","[ ]"
   };
 
-char *updateAccount[6] =
+char *updateAccount[8] =
   {
-   "Edit Info", "[x]", "Delete Account", "[ ]", "Cancel", "[ ]"
+   "Edit Info", "[x]", "Delete Account", "[ ]", "Search Again", "[ ]", "Cancel", "[ ]"
   };
 
 char *error_OverMax = "Error: Over max character length";
@@ -138,8 +137,28 @@ void PrintMenuController(void)
     case 5:
       PrintMainMenuInstructions();
       HashFileLookup(nameLookupInput);
+      if (fileSize > 116)
+	{
+	  printf("Please choose a customer. Enter first and last name: ");
+	  
+      
+	} else
+	{
+	  if (flag == 1)
+	    {
+	      PrintLookUpCustomerQuestion();
+	      flag = 0;
+	      break;
+	    }
+	  PrintUpdateAccount();
+	  SubMenuInput_EditAccount();
+	}
+      break;
+    case 6:
+      PrintMainMenuInstructions();
+      HashFileLookup(nameLookupInput);
       PrintUpdateAccount();
-      SubMenuInput_EditAccount(); 
+      SubMenuInput_EditAccount();
       break;
     case '\n':
       break;
@@ -157,14 +176,13 @@ void PrintLookUpCustomerQuestion(void)
 
 void PrintUpdateAccount(void)
 {
-  printf("\n%s %s %s %s %s %s ", updateAccount[0],updateAccount[1],updateAccount[2],updateAccount[3],updateAccount[4],updateAccount[5]);
+  printf("\n%s %s %s %s %s %s %s %s", updateAccount[0],updateAccount[1],updateAccount[2],updateAccount[3],updateAccount[4],updateAccount[5],updateAccount[6],updateAccount[7]);
 }
 
 void PrintYesNoCancel(void)
 {
-  //HashFileLookup("Mathe");
   printf("\nIs the above information correct?\n");
-  for (int i = 0; i < 6; i++)
+  for (int i = 0; i < 5; i++)
     {
       printf("%s ", yesNo[i]);
     }
@@ -202,7 +220,6 @@ void PrintNewCustomerMenu(void)
     {
       printf("%s", createNewAccount[i]);
       fgets(firstNameInput, FIFTY, stdin);
-      //printf("%s", createNewAccount[i]);
     }
 }
 
@@ -228,8 +245,10 @@ void CreateNewCustomer(void)
   int theAge;
   int thePhone;
   int theDeposit;
+  
   struct customer *aNewCust = (struct customer*)malloc(sizeof(struct customer));
-  //struct customer aNewCust;  
+  struct header *aNewHeader = (struct header*)malloc(sizeof(struct header));
+    
   printf("%s", createNewAccount[0]);
   if (fgets(firstNameInput, MAX_NAME, stdin))
     {
@@ -268,17 +287,23 @@ void CreateNewCustomer(void)
   aNewCust->age = theAge;
   aNewCust->phoneNumber = thePhone;
   aNewCust->accountBalance = theDeposit;
+  
   char catName[100];
   memset(catName, '\0', 100*sizeof(char));
-  strcat(catName, firstNameInput);
+  strcat(catName, aNewCust->firstName);
   strcat(catName, "::");
-  strcat(catName, lastNameInput);
+  strcat(catName, aNewCust->lastName);
   strcat(catName, ";");
-  //delimeters to pick out first and last name later on when we use the look up function
   aNewCust->id = hash(catName);
-  //aNewCust->next = NULL;
-  //create file with hashed name first::last;
-  HashFileInsert(aNewCust);
+
+  aNewHeader->length = sizeof(struct customer);
+  aNewHeader->hashed_firstName = hash(aNewCust->firstName);
+  aNewHeader->hashed_lastName = hash(aNewCust->lastName);
+  aNewHeader->versionMajor = 'A'; //temp
+  aNewHeader->versionMinor = 'B';//temp
+  aNewHeader->versionSub = 'C';//temp
+  
+  HashFileInsert(aNewCust, aNewHeader);
   free(aNewCust);
 }
 
@@ -307,7 +332,22 @@ void init_hash_table()
     }
 }
 
-//hash the customer's name. the name = it's ascii values added up
+unsigned int HashCatIn(char *f_name, char *l_name)
+{
+  int hashid = 0;
+  char catName[100];
+  memset(catName, '\0', 100*sizeof(char));
+  strcat(catName, f_name);
+  strcat(catName, "::");
+  strcat(catName, l_name);
+  strcat(catName, ";");
+
+  hashid = hash(catName);
+
+  return hashid;
+}
+
+//hash the customer's name. the name = its ascii values added up
 unsigned int hash(char *name)
 {
   int hash = 0;
@@ -329,7 +369,7 @@ bool CheckForFile(char *filename)
   return true;
 }
 
-bool HashFileInsert(struct customer *c)
+bool HashFileInsert(struct customer *c, struct header *h)
 {
   if (c == NULL)
     {
@@ -346,13 +386,7 @@ bool HashFileInsert(struct customer *c)
   snprintf(outfile, 12, "%d", index);
   strcat(finalPath, outfile);
   strcat(finalPath, extension);
-  /*
-  if (!CheckForFile(finalPath))
-    {
-      fprintf(stderr, "Error: Name exists already!! Collision!\n");
-      return false;
-    }
-  */
+  
   FILE *filePtr;
   //append OR write binary
   //will append if multiple names exisit here
@@ -362,8 +396,39 @@ bool HashFileInsert(struct customer *c)
       fprintf(stderr, "Error: File NULL! HashFileInsert\n");
       return false;
     }
-  fwrite(c, sizeof(struct customer), 1, filePtr);
+  fseek(filePtr, 0L, SEEK_END);
+  fileSize = ftell(filePtr);
+  long int seekToFile = fileSize;
+  if (fileSize > 116)
+    {
+      //more than 1 file if true
+      //don't reset seek because we are appending on end of file.
+      //save this fileSize as the seekTo Point for this customer's header.
+      h->seekToByte = seekToFile;
+      fwrite(c, sizeof(struct customer), 1, filePtr);
+      //fwrite(h, sizeof(struct customer), 1, filePtr);
+    } else
+    {
+      //reset the seek to start of file
+      fseek(filePtr, 0L, SEEK_SET);
+      h->seekToByte = 0;
+      fwrite(c, sizeof(struct customer), 1, filePtr);
+      //fwrite(h, sizeof(struct customer), 1, filePtr);
+    }
+  
   fclose(filePtr);
+}
+
+void HeaderFileLookup(char *id)
+{
+  struct customer *findCust = NULL;
+  if(fgets(nameLookupInput, MAX_NAME, stdin))
+    {
+      eat_extra(nameLookupInput);
+    }
+
+  FILE *filePtr;
+  
 }
 
 void HashFileLookup(char *name)
@@ -384,7 +449,8 @@ void HashFileLookup(char *name)
   
   if (CheckForFile(finalPath))
     {
-      fprintf(stderr, "No customer record found: HashFileLookup\n");
+      fprintf(stderr, "-No customer record found-\n\n");
+      flag = 1;
       return;
     }
   
@@ -395,9 +461,13 @@ void HashFileLookup(char *name)
     }
 
   fseek(filePtr, 0L, SEEK_END);
-  long int fileSize = ftell(filePtr);
+  fileSize = ftell(filePtr);
+  if (fileSize > 116)
+    {
+      printf("The following records were found:\n\n");
+    }
 
-  printf("File is %ld bytes\n", fileSize);
+  //seeking back to start of file to get all contents
   fseek(filePtr, 0L, SEEK_SET);
   
   while (fread(&fileCustomer, sizeof(struct customer), 1, filePtr))
@@ -408,6 +478,13 @@ void HashFileLookup(char *name)
       */
     }
   fclose(filePtr);
+
+  
+}
+
+bool HashFileDelete(char *name)
+{
+  //remove()
 }
 
 bool hash_table_delete(char *name)
@@ -584,12 +661,12 @@ void SubMenuInput_EditAccount(void)
   switch(menuUserInput)
     {
     case S_KEY:
-      for (int i = 1; i <= 5; i+=2)
+      for (int i = 1; i <= 7; i+=2)
 	{
 	  if (strchr(updateAccount[i], 'x') != NULL)
 	    {
 	      updateAccount[i] = "[ ]";
-	      if (i == 5)
+	      if (i == 7)
 		{
 		  updateAccount[1] = "[x]";
 		  toggleUpdateAccount = 0;
@@ -615,6 +692,10 @@ void SubMenuInput_EditAccount(void)
 	  PrintMenuFlag = 2;
 	  break;
 	case 2:
+	  //search again
+	  PrintMenuFlag = 4;
+	  break;
+	case 3:
 	  //cancel
 	  MainMenuOrSubMenuFlag = Menu_MainMenu;
 	  PrintMenuFlag = 1;

@@ -6,6 +6,7 @@
 #define MAX_OPEN_DEPOSIT 100000
 #define MAX_PHONE 17
 #define MAX_AGE 8
+#define VERSION 0.5.0
 
 //each customer is 116 bytes
 struct customer {
@@ -15,15 +16,27 @@ struct customer {
   unsigned int age;
   unsigned int phoneNumber;
   int accountBalance;
-  //struct customer *next;
 };
 
+//20 bytes
 struct header {
   int hashed_firstName;
   int hashed_lastName;
-  unsigned int length;
   long int seekToByte;
-  float version;
+  unsigned int length;
+  /*
+  e.g. major x 1000
+  minor x 100
+  sub
+  then run through func to add these together.
+  saves space - float vs 3 chars
+  with #define #VERSION
+  */
+  char versionMajor;
+  char versionMinor;
+  char versionSub;
+  //char buffer[200];
+  //extra space for expansion for other fields
 };
 
 extern int PrintMenuFlag;
@@ -34,6 +47,7 @@ extern char *createNewAccount[];
 extern char *mainInstructions[];
 extern char *menuOptions[];
 extern char *menuChecks[];
+long int fileSize;
 char nameLookupInput[50];
 char accountBalanceInput[MAX_OPEN_DEPOSIT];
 char phoneInput[MAX_PHONE];
@@ -50,7 +64,7 @@ void eat_extra(char *input);
 void PrintLookUpCustomerQuestion(void);
 void HashFileLookup(char *name);
 bool CheckForFile(char *filename);
-bool HashFileInsert(struct customer *c);
+bool HashFileInsert(struct customer *c, struct header *h);
 void LookUpCustomer(void);
 void PrintYesNoCancel(void);
 void UserInputController(void);
