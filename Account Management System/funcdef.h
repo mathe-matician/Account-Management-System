@@ -7,6 +7,10 @@
 #define MAX_PHONE 17
 #define MAX_AGE 8
 #define VERSION 0.5.0
+#define CUST_STRUCT_SIZE 116
+
+#define ERROR_MSG\
+  fprintf(stderr, "Error(%d): %s\nOccured in: %s\nLine: %d\nFile: %s\nC Version: %ld\nDate: %s\n", errno, strerror(errnum),__func__,__LINE__,__FILE__,__STDC_VERSION__,__DATE__)
 
 //each customer is 116 bytes
 struct customer {
@@ -16,6 +20,7 @@ struct customer {
   unsigned int age;
   unsigned int phoneNumber;
   int accountBalance;
+  char extra_buffer[200];
 };
 
 //20 bytes
@@ -35,7 +40,7 @@ struct header {
   char versionMajor;
   char versionMinor;
   char versionSub;
-  //char buffer[200];
+  char buffer[200];
   //extra space for expansion for other fields
 };
 

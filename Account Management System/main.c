@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <string.h>
 #include <ctype.h> //tolower()
 #include "funcdef.h"
@@ -305,6 +306,7 @@ void CreateNewCustomer(void)
   
   HashFileInsert(aNewCust, aNewHeader);
   free(aNewCust);
+  free(aNewHeader);
 }
 
 char *ConvertName_Upper(char *name)
@@ -373,7 +375,7 @@ bool HashFileInsert(struct customer *c, struct header *h)
 {
   if (c == NULL)
     {
-      fprintf(stderr, "Error: Insert to file failed. Customer NULL\n");
+      ERROR_MSG;
       return false;
     }
   int index = hash(c->lastName);
@@ -393,13 +395,13 @@ bool HashFileInsert(struct customer *c, struct header *h)
   filePtr = fopen(finalPath, "ab");
   if (filePtr == NULL)
     {
-      fprintf(stderr, "Error: File NULL! HashFileInsert\n");
+      ERROR_MSG;
       return false;
     }
   fseek(filePtr, 0L, SEEK_END);
   fileSize = ftell(filePtr);
   long int seekToFile = fileSize;
-  if (fileSize > 116)
+  if (fileSize > CUST_STRUCT_SIZE)
     {
       //more than 1 file if true
       //don't reset seek because we are appending on end of file.
@@ -415,18 +417,51 @@ bool HashFileInsert(struct customer *c, struct header *h)
       fwrite(c, sizeof(struct customer), 1, filePtr);
       //fwrite(h, sizeof(struct customer), 1, filePtr);
     }
-  
+
   fclose(filePtr);
+
+  //create path for headers
+  char catName[150];
+  char *pathH = "./bin/";
+  char *extensionH = ".bin";
+  memset(catName, '\0', 150*sizeof(char));
+  strcat(catName, pathH);
+  strcat(catName, h->hashed_firstName);
+  strcat(catName, "::");
+  strcat(catName, h->hashed_lastName);
+  strcat(catName, ";");
+  strcat(catName, extensionH);
+  
+  FILE *headerPtr;
+  headerPtr = fopen(catName, "ab");
+  if (headerPtr == NULL)
+    {
+      ERROR_MSG;
+      return false;
+    }
+  
+  fclose(headerPtr);
 }
 
 void HeaderFileLookup(char *id)
 {
-  struct customer *findCust = NULL;
+  //strtok with ":;"
+  //argument is combined input of first name and last name to find header file
+  //argument should be firstName::lastName;.bin
+  //once header is found, we get the seekToPoint for the other blob file
+  //can search by just last name as well for more generic search to yield all the accounts under that last name, then choose which one.
+  struct customer findCust = NULL;
+  printf("-Name to look up-\n");
+  printf("First Name: ");
   if(fgets(nameLookupInput, MAX_NAME, stdin))
     {
       eat_extra(nameLookupInput);
     }
-
+  printf("Last Name: ");
+  if(fgets(nameLookupInput, MAX_NAME, stdin))
+    {
+      eat_extra(nameLookupInput);
+    }
   FILE *filePtr;
   
 }
