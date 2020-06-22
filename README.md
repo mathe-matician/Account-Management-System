@@ -1,2 +1,1 @@
-# SmallCProjects
-Small C Projects
+# Account Management System
