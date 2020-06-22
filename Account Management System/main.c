@@ -142,7 +142,7 @@ void PrintMenuController(void)
     case 5:
       PrintMainMenuInstructions();
       HashFileLookup(nameLookupInput);
-      if (fileSize > 116)
+      if (fileSize > 316)
 	{
 	  HeaderFileLookup();
 	} else
@@ -495,9 +495,9 @@ void HeaderFileLookup(void)
     }
   
   //get seekToPoint
-  seekTo = foundHeader->seekToByte;
+  seekTo = foundHeader.seekToByte;
   //get last name to look up hashed file again
-  hashedLastName = foundHeader->hashedLastName;
+  hashedLastName = foundHeader.hashed_lastName;
   fclose(filePtr);
   
   //build path - MAKE MACRO FOR THIS. -  
@@ -537,7 +537,7 @@ void HashFileLookup(char *name)
 
   fseek(filePtr, 0L, SEEK_END);
   fileSize = ftell(filePtr);
-  if (fileSize > 116)
+  if (fileSize > 316)
     {
       printf("The following records were found:\n\n");
     }
@@ -547,7 +547,8 @@ void HashFileLookup(char *name)
   
   while (fread(&fileCustomer, sizeof(struct customer), 1, filePtr))
     {
-      printf("First name: %sLast name: %s\n", fileCustomer.firstName, fileCustomer.lastName);
+      printf("----------------------------\n");
+      printf("First name: %sLast name: %s", fileCustomer.firstName, fileCustomer.lastName);
       /*
       printf("First Name: %sLast Name: %sAge: %d\nPhone: %d\nAccount Balance: %d\nID: %d\n", fileCustomer.firstName, fileCustomer.lastName, fileCustomer.age, fileCustomer.phoneNumber, fileCustomer.accountBalance, fileCustomer.id);
       */

@@ -20,7 +20,8 @@ struct customer {
   unsigned int age;
   unsigned int phoneNumber;
   int accountBalance;
-  char extra_buffer[200];
+  char dob[11];
+  char extra_buffer[189];
 };
 
 //220 bytes
