@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <string.h>
 #include <ctype.h> //tolower()
+#include <signal.h>
 #include "funcdef.h"
 
 #define ESC 27
@@ -15,7 +16,7 @@
 #define MAX_NAME 128
 #define getVariableName(var) #var
 
-int flag = 0;
+int NoCustomerFlag = 0;
 int MainMenuOrSubMenuFlag = 0;
 int PrintMenuFlag = 1;
 int currentCheck = 0;
@@ -26,6 +27,7 @@ int toggleUpdateAccount = 0;
 int firstTimeThroughFlag = 1;
 int ifYesFlag = 0;
 int waitFlag = 1;
+
 enum { Menu_MainMenu = 0, Menu_SubMenu_MakeNewAccount, Menu_SubMenu_UpdateAccount};
 
 enum { Yes = 0, No, Cancel};
@@ -88,8 +90,9 @@ char *error_OverMax = "Error: Over max character length";
 
 int main()
 {
+  ZeroOut();
   init_hash_table();
-
+  
   RunProg();
   return 0;
 }
@@ -127,6 +130,7 @@ void PrintMenuController(void)
       //wait to confirm if correct?
       PrintMainMenuInstructions();
       //show entered info
+      PrintConfirmAccount(firstNameInput, lastNameInput, ageInput, phoneInput, accountBalanceInput);
       PrintYesNoCancel();
       SubMenuInput_MakeNewAccount();
       break;
@@ -140,15 +144,13 @@ void PrintMenuController(void)
       HashFileLookup(nameLookupInput);
       if (fileSize > 116)
 	{
-	  printf("Please choose a customer. Enter first and last name: ");
-	  
-      
+	  HeaderFileLookup();
 	} else
 	{
-	  if (flag == 1)
+	  if (NoCustomerFlag == 1)
 	    {
 	      PrintLookUpCustomerQuestion();
-	      flag = 0;
+	      NoCustomerFlag = 0;
 	      break;
 	    }
 	  PrintUpdateAccount();
@@ -169,10 +171,7 @@ void PrintMenuController(void)
 void PrintLookUpCustomerQuestion(void)
 {
   printf("Enter name to search: ");
-  if(fgets(nameLookupInput, MAX_NAME, stdin))
-    {
-      eat_extra(nameLookupInput);
-    }
+  fgets(nameLookupInput, MAX_NAME, stdin);
 }
 
 void PrintUpdateAccount(void)
@@ -183,10 +182,15 @@ void PrintUpdateAccount(void)
 void PrintYesNoCancel(void)
 {
   printf("\nIs the above information correct?\n");
-  for (int i = 0; i < 5; i++)
+  for (int i = 0; i < 6; i++)
     {
       printf("%s ", yesNo[i]);
     }
+}
+
+void PrintConfirmAccount(char *first, char *last, char *age, char *phone, char *deposit)
+{
+  printf("First Name: %sLast Name: %sAge: %sPhone Number: %sInitial Deposit: %s", first, last, age, phone, deposit);
 }
 
 void PrintMainMenuInstructions(void)
@@ -224,6 +228,7 @@ void PrintNewCustomerMenu(void)
     }
 }
 
+
 void eat_extra(char *input)
 {
   //via spstanley - stackoverflow
@@ -251,33 +256,22 @@ void CreateNewCustomer(void)
   struct header *aNewHeader = (struct header*)malloc(sizeof(struct header));
     
   printf("%s", createNewAccount[0]);
-  if (fgets(firstNameInput, MAX_NAME, stdin))
-    {
-      eat_extra(firstNameInput);      
-    }
+  fgets(firstNameInput, MAX_NAME, stdin);
+  
   printf("%s", createNewAccount[1]);
-  if (fgets(lastNameInput, MAX_NAME, stdin))
-    {
-      eat_extra(lastNameInput);
-    }
+  fgets(lastNameInput, MAX_NAME, stdin);
+  
   printf("%s", createNewAccount[2]);
-  if (fgets(ageInput, MAX_AGE, stdin))
-    {
-      eat_extra(ageInput); 
-      theAge = atoi(ageInput);
-    }
+  fgets(ageInput, MAX_AGE, stdin);
+  
   printf("%s", createNewAccount[3]);
-  if (fgets(phoneInput, MAX_PHONE, stdin))
-    {
-      eat_extra(phoneInput);
-      thePhone = atoi(phoneInput);
-    }
+  fgets(phoneInput, MAX_PHONE, stdin);
+  thePhone = atoi(phoneInput);
+    
   printf("%s", createNewAccount[4]);
-  if (fgets(accountBalanceInput, MAX_NAME, stdin))
-    {
-      eat_extra(accountBalanceInput); 
-      theDeposit = atoi(accountBalanceInput);
-    }
+  fgets(accountBalanceInput, MAX_NAME, stdin);
+  theDeposit = atoi(accountBalanceInput);
+  
   PrintMenuFlag = 3;
   
   MainMenuOrSubMenuFlag = Menu_SubMenu_MakeNewAccount;
@@ -292,9 +286,9 @@ void CreateNewCustomer(void)
   char catName[100];
   memset(catName, '\0', 100*sizeof(char));
   strcat(catName, aNewCust->firstName);
-  strcat(catName, "::");
+  strcat(catName, "--");
   strcat(catName, aNewCust->lastName);
-  strcat(catName, ";");
+  strcat(catName, "-");
   aNewCust->id = hash(catName);
 
   aNewHeader->length = sizeof(struct customer);
@@ -373,7 +367,7 @@ bool CheckForFile(char *filename)
 
 bool HashFileInsert(struct customer *c, struct header *h)
 {
-  if (c == NULL)
+  if ((c == NULL) || (h == NULL))
     {
       ERROR_MSG;
       return false;
@@ -408,28 +402,32 @@ bool HashFileInsert(struct customer *c, struct header *h)
       //save this fileSize as the seekTo Point for this customer's header.
       h->seekToByte = seekToFile;
       fwrite(c, sizeof(struct customer), 1, filePtr);
-      //fwrite(h, sizeof(struct customer), 1, filePtr);
     } else
     {
       //reset the seek to start of file
       fseek(filePtr, 0L, SEEK_SET);
       h->seekToByte = 0;
       fwrite(c, sizeof(struct customer), 1, filePtr);
-      //fwrite(h, sizeof(struct customer), 1, filePtr);
     }
 
   fclose(filePtr);
-
+  
   //create path for headers
   char catName[150];
+  char outFirstName[FIFTY];
+  char outLastName[FIFTY];
   char *pathH = "./bin/";
   char *extensionH = ".bin";
+  memset(outFirstName, '\0', 50*sizeof(char));
+  memset(outLastName, '\0', 50*sizeof(char));
   memset(catName, '\0', 150*sizeof(char));
   strcat(catName, pathH);
-  strcat(catName, h->hashed_firstName);
-  strcat(catName, "::");
-  strcat(catName, h->hashed_lastName);
-  strcat(catName, ";");
+  snprintf(outFirstName, 50, "%d", h->hashed_firstName);
+  strcat(catName, outFirstName);
+  strcat(catName, "--");
+  snprintf(outLastName, 50, "%d", h->hashed_lastName);
+  strcat(catName, outLastName);
+  strcat(catName, "-");
   strcat(catName, extensionH);
   
   FILE *headerPtr;
@@ -439,30 +437,72 @@ bool HashFileInsert(struct customer *c, struct header *h)
       ERROR_MSG;
       return false;
     }
-  
+  //seek to end of file and write new header in
+  fseek(headerPtr, 0L, SEEK_END);
+  fwrite(h, sizeof(struct header), 1, headerPtr);
   fclose(headerPtr);
 }
 
-void HeaderFileLookup(char *id)
+void HeaderFileLookup(void)
 {
-  //strtok with ":;"
-  //argument is combined input of first name and last name to find header file
-  //argument should be firstName::lastName;.bin
-  //once header is found, we get the seekToPoint for the other blob file
-  //can search by just last name as well for more generic search to yield all the accounts under that last name, then choose which one.
-  struct customer findCust = NULL;
-  printf("-Name to look up-\n");
+  memset(f_name, '\0', 50*sizeof(char));
+  memset(l_name, '\0', 50*sizeof(char));
+  struct customer foundCustomer;
+  struct header foundHeader;
+  long int seekTo;
+  int hashedLastName;
+  printf("-Refine search by first and last name-\n");
   printf("First Name: ");
-  if(fgets(nameLookupInput, MAX_NAME, stdin))
-    {
-      eat_extra(nameLookupInput);
-    }
+  fgets(f_name, MAX_NAME, stdin);
   printf("Last Name: ");
-  if(fgets(nameLookupInput, MAX_NAME, stdin))
-    {
-      eat_extra(nameLookupInput);
-    }
+  fgets(l_name, MAX_NAME, stdin);
+
+  char catName[150];
+  memset(catName, '\0', 150*sizeof(char));
+  char *pathH = "./bin/";
+  char *extensionH = ".bin";
+  char outFirstName[FIFTY];
+  char outLastName[FIFTY];
+  memset(outFirstName, '\0', 50*sizeof(char));
+  memset(outLastName, '\0', 50*sizeof(char));
+  strcat(catName, pathH);
+  snprintf(outFirstName, 50, "%d", hash(f_name));
+  snprintf(outLastName, 50, "%d", hash(l_name));
+  strcat(catName, outFirstName);
+  strcat(catName, "--");
+  strcat(catName, outLastName);
+  strcat(catName, "-");
+  strcat(catName, extensionH);
+  
   FILE *filePtr;
+  if (CheckForFile(catName))
+    {
+      fprintf(stderr, "-No customer record found-\n\n");
+      NoCustomerFlag = 1;
+      return;
+    }
+  
+  filePtr = fopen(catName, "rb");
+  if (filePtr == NULL)
+    {
+      ERROR_MSG;
+      return;
+    }
+
+  while (fread(&foundHeader, sizeof(struct header), 1, filePtr))
+    {
+      //do nothing - use while for error handling
+    }
+  
+  //get seekToPoint
+  seekTo = foundHeader->seekToByte;
+  //get last name to look up hashed file again
+  hashedLastName = foundHeader->hashedLastName;
+  fclose(filePtr);
+  
+  //build path - MAKE MACRO FOR THIS. -  
+  //open blob file, seek to the seekToPoint
+  //display results (depending on version number)
   
 }
 
@@ -485,7 +525,7 @@ void HashFileLookup(char *name)
   if (CheckForFile(finalPath))
     {
       fprintf(stderr, "-No customer record found-\n\n");
-      flag = 1;
+      NoCustomerFlag = 1;
       return;
     }
   
@@ -536,6 +576,17 @@ bool hash_table_delete(char *name)
       fprintf(stderr, "Something went wrong when deleting...\n");
       return false;
     }
+}
+
+void ZeroOut(void)
+{
+  memset(nameLookupInput, '\0', 50*sizeof(char));
+  memset(firstNameInput, '\0', 50*sizeof(char));
+  memset(lastNameInput, '\0', 50*sizeof(char));
+  memset(ageInput, '\0', 8*sizeof(char));
+  memset(ageInput, '\0', 8*sizeof(char));
+  memset(phoneInput, '\0', 17*sizeof(char));
+  memset(accountBalanceInput, '\0', 100*sizeof(char));
 }
 
 //----------------------------

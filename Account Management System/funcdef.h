@@ -10,7 +10,7 @@
 #define CUST_STRUCT_SIZE 116
 
 #define ERROR_MSG\
-  fprintf(stderr, "Error(%d): %s\nOccured in: %s\nLine: %d\nFile: %s\nC Version: %ld\nDate: %s\n", errno, strerror(errnum),__func__,__LINE__,__FILE__,__STDC_VERSION__,__DATE__)
+  fprintf(stderr, "Error(%d): %s\nLine: %d\nFile: %s\nC Version: %ld\nDate: %s\n", errno,__func__,__LINE__,__FILE__,__STDC_VERSION__,__DATE__)
 
 //each customer is 116 bytes
 struct customer {
@@ -23,7 +23,7 @@ struct customer {
   char extra_buffer[200];
 };
 
-//20 bytes
+//220 bytes
 struct header {
   int hashed_firstName;
   int hashed_lastName;
@@ -53,7 +53,8 @@ extern char *mainInstructions[];
 extern char *menuOptions[];
 extern char *menuChecks[];
 long int fileSize;
-char nameLookupInput[50];
+char f_name[FIFTY];
+char l_name[FIFTY];
 char accountBalanceInput[MAX_OPEN_DEPOSIT];
 char phoneInput[MAX_PHONE];
 char ageInput[MAX_AGE];
@@ -62,7 +63,11 @@ char fullNameInput[FIFTY+FIFTY];
 char firstNameInput[FIFTY];
 char firstfirstfirst[FIFTY];
 char lastNameInput[FIFTY];
+char nameLookupInput[FIFTY];
 
+void HeaderFileLookup(void);
+void PrintConfirmAccount(char *first, char *last, char *age, char *phone, char *deposit);
+void ZeroOut(void);
 void PrintUpdateAccount(void);
 void SubMenuInput_EditAccount(void);
 void eat_extra(char *input);
