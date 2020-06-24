@@ -1,18 +1,44 @@
 #include <stdbool.h>
-//TABLE_SIZE: arbitrary amount of hash table entries
-//the table is set up to handle collisions through linked lists
 #define TABLE_SIZE 1000
 #define FIFTY 50
 #define MAX_OPEN_DEPOSIT 100000
 #define MAX_PHONE 17
-#define MAX_AGE 8
-#define VERSION 0.5.0
-#define CUST_STRUCT_SIZE 116
+#define MAX_AGE 15
+#define VERSION 050
+#define CUST_STRUCT_SIZE 316
+#define HEADER_STRUCT_SIZE 220
 
 #define ERROR_MSG\
   fprintf(stderr, "Error(%d): %s\nLine: %d\nFile: %s\nC Version: %ld\nDate: %s\n", errno,__func__,__LINE__,__FILE__,__STDC_VERSION__,__DATE__)
 
-//each customer is 116 bytes
+//stores version as 3 separate char members in header struct
+#define VERSION_STORE(Version, c_header)\
+  c_header->versionMajor = #Version[0];\
+  c_header->versionMinor = #Version[1];\
+  c_header->versionSub = #Version[2];
+
+#define VERSION_CMP(Version, f_header)\
+  bool bool_maj, bool_min, bool_sub;\
+  bool_maj = (f_header.versionMajor == #Version[0])?true:false;\
+  bool_min = (f_header.versionMinor == #Version[1])?true:false;\
+  bool_sub = (f_header.versionSub == #Version[2])?true:false;\
+  if (!bool_maj || !bool_min || !bool_sub)\
+    {\
+      fprintf(stderr, "Error: Account version does not match current version. Displayed data will not be complete.\n");\
+    }
+
+#define PATH_BUILD(fpSize,infileSize,nInput)\
+  char finalPath[fpSize];\
+  memset(finalPath, '\0', fpSize*sizeof(char));\
+  char infile[infileSize];\
+  char *path = "./bin/";\
+  char *extension = ".bin";\
+  strcat(finalPath, path);\
+  snprintf(infile, 12, "%d", hash(nInput));\
+  strcat(finalPath, infile);\
+  strcat(finalPath, extension);
+
+//each customer is 316 bytes
 struct customer {
   char firstName[FIFTY];
   char lastName[FIFTY];
@@ -20,8 +46,8 @@ struct customer {
   unsigned int age;
   unsigned int phoneNumber;
   int accountBalance;
-  char dob[11];
-  char extra_buffer[189];
+  char dob[15];
+  char extra_buffer[185];
 };
 
 //220 bytes
@@ -30,14 +56,6 @@ struct header {
   int hashed_lastName;
   long int seekToByte;
   unsigned int length;
-  /*
-  e.g. major x 1000
-  minor x 100
-  sub
-  then run through func to add these together.
-  saves space - float vs 3 chars
-  with #define #VERSION
-  */
   char versionMajor;
   char versionMinor;
   char versionSub;
@@ -65,13 +83,13 @@ char firstNameInput[FIFTY];
 char firstfirstfirst[FIFTY];
 char lastNameInput[FIFTY];
 char nameLookupInput[FIFTY];
+struct customer fnd_cust;
 
-void HeaderFileLookup(void);
+struct customer HeaderFileLookup(void);
 void PrintConfirmAccount(char *first, char *last, char *age, char *phone, char *deposit);
 void ZeroOut(void);
 void PrintUpdateAccount(void);
 void SubMenuInput_EditAccount(void);
-void eat_extra(char *input);
 void PrintLookUpCustomerQuestion(void);
 void HashFileLookup(char *name);
 bool CheckForFile(char *filename);

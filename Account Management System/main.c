@@ -27,6 +27,7 @@ int toggleUpdateAccount = 0;
 int firstTimeThroughFlag = 1;
 int ifYesFlag = 0;
 int waitFlag = 1;
+bool secondCust = false;
 
 enum { Menu_MainMenu = 0, Menu_SubMenu_MakeNewAccount, Menu_SubMenu_UpdateAccount};
 
@@ -58,7 +59,7 @@ char *createNewAccount[5] =
   {
    "First Name: ",
    "Last Name: ",
-   "Age: ",
+   "Date of Birth (mm/dd/yyyy): ",
    "Phone: ",
    "Deposit: "
   };
@@ -91,7 +92,6 @@ char *error_OverMax = "Error: Over max character length";
 int main()
 {
   ZeroOut();
-  init_hash_table();
   
   RunProg();
   return 0;
@@ -144,7 +144,9 @@ void PrintMenuController(void)
       HashFileLookup(nameLookupInput);
       if (fileSize > 316)
 	{
-	  HeaderFileLookup();
+	  fnd_cust = HeaderFileLookup();
+	  PrintMenuFlag = 7;
+	  //HeaderFileLookup();
 	} else
 	{
 	  if (NoCustomerFlag == 1)
@@ -160,6 +162,12 @@ void PrintMenuController(void)
     case 6:
       PrintMainMenuInstructions();
       HashFileLookup(nameLookupInput);
+      PrintUpdateAccount();
+      SubMenuInput_EditAccount();
+      break;
+    case 7:
+      PrintMainMenuInstructions();
+      printf("First Name: %sLast Name: %sDate of Birth: %sPhone Number: %u\nAccount Balance: $%d\n", fnd_cust.firstName, fnd_cust.lastName, fnd_cust.dob, fnd_cust.phoneNumber, fnd_cust.accountBalance);
       PrintUpdateAccount();
       SubMenuInput_EditAccount();
       break;
@@ -228,33 +236,17 @@ void PrintNewCustomerMenu(void)
     }
 }
 
-
-void eat_extra(char *input)
-{
-  //via spstanley - stackoverflow
-  //Q: "how to prevent the user from entering more data than the maximum limit?"
-  int ch;
-  //meaning we didn't find the null terminator
-  if (strchr(input, '\n') == NULL)
-    {
-      //get each character up to the null terminator
-      while((ch = getchar()) != '\n')
-	{
-	  if (ch < 0) return;
-	}
-    }
-}
-
 void CreateNewCustomer(void)
 {
   //FILE *outfile;
-  int theAge;
+  //int theAge;
   int thePhone;
   int theDeposit;
   
   struct customer *aNewCust = (struct customer*)malloc(sizeof(struct customer));
+
   struct header *aNewHeader = (struct header*)malloc(sizeof(struct header));
-    
+  
   printf("%s", createNewAccount[0]);
   fgets(firstNameInput, MAX_NAME, stdin);
   
@@ -279,7 +271,8 @@ void CreateNewCustomer(void)
   //copy input data to struct
   strcpy(aNewCust->firstName, firstNameInput);
   strcpy(aNewCust->lastName, lastNameInput);
-  aNewCust->age = theAge;
+  strcpy(aNewCust->dob, ageInput);
+  //aNewCust->age = theAge;
   aNewCust->phoneNumber = thePhone;
   aNewCust->accountBalance = theDeposit;
   
@@ -294,10 +287,7 @@ void CreateNewCustomer(void)
   aNewHeader->length = sizeof(struct customer);
   aNewHeader->hashed_firstName = hash(aNewCust->firstName);
   aNewHeader->hashed_lastName = hash(aNewCust->lastName);
-  aNewHeader->versionMajor = 'A'; //temp
-  aNewHeader->versionMinor = 'B';//temp
-  aNewHeader->versionSub = 'C';//temp
-  
+  VERSION_STORE(VERSION, aNewHeader);//stores current version in new header
   HashFileInsert(aNewCust, aNewHeader);
   free(aNewCust);
   free(aNewHeader);
@@ -395,6 +385,8 @@ bool HashFileInsert(struct customer *c, struct header *h)
   fseek(filePtr, 0L, SEEK_END);
   fileSize = ftell(filePtr);
   long int seekToFile = fileSize;
+  
+  //need to handle case of when it is the second customer!
   if (fileSize > CUST_STRUCT_SIZE)
     {
       //more than 1 file if true
@@ -402,12 +394,18 @@ bool HashFileInsert(struct customer *c, struct header *h)
       //save this fileSize as the seekTo Point for this customer's header.
       h->seekToByte = seekToFile;
       fwrite(c, sizeof(struct customer), 1, filePtr);
+    } else if (secondCust)
+    {
+      h->seekToByte = seekToFile;
+      fwrite(c, sizeof(struct customer), 1, filePtr);
+      secondCust = false;
     } else
     {
       //reset the seek to start of file
       fseek(filePtr, 0L, SEEK_SET);
       h->seekToByte = 0;
       fwrite(c, sizeof(struct customer), 1, filePtr);
+      secondCust = true;
     }
 
   fclose(filePtr);
@@ -443,14 +441,17 @@ bool HashFileInsert(struct customer *c, struct header *h)
   fclose(headerPtr);
 }
 
-void HeaderFileLookup(void)
+struct customer HeaderFileLookup(void)
 {
   memset(f_name, '\0', 50*sizeof(char));
   memset(l_name, '\0', 50*sizeof(char));
   struct customer foundCustomer;
+  struct customer NULLSTRUCT;
+  memset(&NULLSTRUCT, 0, sizeof(struct customer));
   struct header foundHeader;
   long int seekTo;
   int hashedLastName;
+  printf("----------------------------\n");
   printf("-Refine search by first and last name-\n");
   printf("First Name: ");
   fgets(f_name, MAX_NAME, stdin);
@@ -463,11 +464,14 @@ void HeaderFileLookup(void)
   char *extensionH = ".bin";
   char outFirstName[FIFTY];
   char outLastName[FIFTY];
+  int hf_name, hl_name;
   memset(outFirstName, '\0', 50*sizeof(char));
   memset(outLastName, '\0', 50*sizeof(char));
+  hf_name = hash(f_name);
+  hl_name = hash(l_name);
   strcat(catName, pathH);
-  snprintf(outFirstName, 50, "%d", hash(f_name));
-  snprintf(outLastName, 50, "%d", hash(l_name));
+  snprintf(outFirstName, 50, "%d", hf_name);
+  snprintf(outLastName, 50, "%d", hl_name);
   strcat(catName, outFirstName);
   strcat(catName, "--");
   strcat(catName, outLastName);
@@ -479,14 +483,15 @@ void HeaderFileLookup(void)
     {
       fprintf(stderr, "-No customer record found-\n\n");
       NoCustomerFlag = 1;
-      return;
+      return NULLSTRUCT;
     }
   
   filePtr = fopen(catName, "rb");
   if (filePtr == NULL)
     {
       ERROR_MSG;
-      return;
+      fclose(filePtr);
+      return NULLSTRUCT;
     }
 
   while (fread(&foundHeader, sizeof(struct header), 1, filePtr))
@@ -498,12 +503,35 @@ void HeaderFileLookup(void)
   seekTo = foundHeader.seekToByte;
   //get last name to look up hashed file again
   hashedLastName = foundHeader.hashed_lastName;
+  VERSION_CMP(VERSION, foundHeader);
   fclose(filePtr);
   
-  //build path - MAKE MACRO FOR THIS. -  
-  //open blob file, seek to the seekToPoint
-  //display results (depending on version number)
+  //build path
+  char finalPath[50];
+  memset(finalPath, '\0', 50*sizeof(char));
+  char infile[12];
+  char *path = "./bin/";
+  char *extension = ".bin";
+  strcat(finalPath, path);
+  snprintf(infile, 12, "%d", hashedLastName);
+  strcat(finalPath, infile);
+  strcat(finalPath, extension);
   
+  //open blob file, seek to the seekToPoint
+  filePtr = fopen(finalPath, "rb");
+  if (filePtr == NULL)
+    {
+      ERROR_MSG;
+      fclose(filePtr);
+      return NULLSTRUCT;
+    }
+  fseek(filePtr, seekTo, SEEK_SET);
+  //display results (depending on version number)
+  fread(&foundCustomer, sizeof(struct customer), 1, filePtr);
+  fclose(filePtr);
+
+  return foundCustomer;
+  //printf("\n\nFirst Name: %sLast Name: %sDate of Birth: %sPhone Number: %u\nAccount Balance: $%d\n", foundCustomer.firstName, foundCustomer.lastName, foundCustomer.dob, foundCustomer.phoneNumber, foundCustomer.accountBalance);
 }
 
 void HashFileLookup(char *name)
@@ -511,16 +539,7 @@ void HashFileLookup(char *name)
   //multiple people under same last name handling
   FILE *filePtr;
   struct customer fileCustomer;
-  int index = hash(name);
-  char finalPath[50];
-  memset(finalPath, '\0', 50*sizeof(char));
-  char infile[12];
-  char *path = "./bin/";
-  char *extension = ".bin";
-  strcat(finalPath, path);
-  snprintf(infile, 12, "%d", index);
-  strcat(finalPath, infile);
-  strcat(finalPath, extension);
+  PATH_BUILD(50,12,name);
   
   if (CheckForFile(finalPath))
     {
@@ -548,14 +567,9 @@ void HashFileLookup(char *name)
   while (fread(&fileCustomer, sizeof(struct customer), 1, filePtr))
     {
       printf("----------------------------\n");
-      printf("First name: %sLast name: %s", fileCustomer.firstName, fileCustomer.lastName);
-      /*
-      printf("First Name: %sLast Name: %sAge: %d\nPhone: %d\nAccount Balance: %d\nID: %d\n", fileCustomer.firstName, fileCustomer.lastName, fileCustomer.age, fileCustomer.phoneNumber, fileCustomer.accountBalance, fileCustomer.id);
-      */
+      printf("First name: %sLast name: %sDOB: %s\n", fileCustomer.firstName, fileCustomer.lastName, fileCustomer.dob);
     }
   fclose(filePtr);
-
-  
 }
 
 bool HashFileDelete(char *name)
@@ -584,8 +598,7 @@ void ZeroOut(void)
   memset(nameLookupInput, '\0', 50*sizeof(char));
   memset(firstNameInput, '\0', 50*sizeof(char));
   memset(lastNameInput, '\0', 50*sizeof(char));
-  memset(ageInput, '\0', 8*sizeof(char));
-  memset(ageInput, '\0', 8*sizeof(char));
+  memset(ageInput, '\0', 15*sizeof(char));
   memset(phoneInput, '\0', 17*sizeof(char));
   memset(accountBalanceInput, '\0', 100*sizeof(char));
 }
