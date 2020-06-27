@@ -59,7 +59,8 @@ struct header {
   char versionMajor;
   char versionMinor;
   char versionSub;
-  char buffer[200];
+  int accountStatus;
+  char buffer[196];
   //extra space for expansion for other fields
 };
 
@@ -84,7 +85,11 @@ char firstfirstfirst[FIFTY];
 char lastNameInput[FIFTY];
 char nameLookupInput[FIFTY];
 struct customer fnd_cust;
+struct header fnd_header;
+bool deactive;
 
+void Debug(void);
+int AccountStatus(void);
 struct customer HeaderFileLookup(void);
 void PrintConfirmAccount(char *first, char *last, char *age, char *phone, char *deposit);
 void ZeroOut(void);
@@ -109,8 +114,5 @@ void MainMenuInput(void);
 void MakeNewAccount(void);
 void init_hash_table();
 unsigned int hash(char *name);
-bool hash_table_insert(struct customer *c);
 void CreateNewCustomer(void);
-struct customer *hash_table_lookup(char *name);
-bool hash_table_delete(char *name);
 char *ConvertName_Upper(char *name);

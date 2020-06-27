@@ -33,6 +33,8 @@ enum { Menu_MainMenu = 0, Menu_SubMenu_MakeNewAccount, Menu_SubMenu_UpdateAccoun
 
 enum { Yes = 0, No, Cancel};
 
+enum { INACTIVE = 0, ACTIVE };
+
 enum { NewAccount = 0,
        UpdateAccount, //1  
        Exit,//2
@@ -40,6 +42,12 @@ enum { NewAccount = 0,
 };
 
 struct customer *hash_table[TABLE_SIZE];
+
+char *accountStatusToggle[2] =
+  {
+   "INACTIVE",
+   "ACTIVE"
+  };
 
 char *menuChecks[3] =
   {
@@ -64,15 +72,14 @@ char *createNewAccount[5] =
    "Deposit: "
   };
 
-char *mainInstructions[23] =
+char *mainInstructions[20] =
   {
    "|----------------------------|",
    "|","       Welcome to AMS       ","|",
    "|","----------------------------","|",
    "|","        Key Commands:       ","|",
    "|","   W/S = move up and down   ","|",
-   "|","  D = Open selected option  ","|",
-   "|"," A = Return to previous menu","|",
+   "|","     D = Selected option    ","|",
    "|","  ENTER = Confirm command   ","|",
    "|----------------------------|"
   };
@@ -84,7 +91,7 @@ char *yesNo[6] =
 
 char *updateAccount[8] =
   {
-   "Edit Info", "[x]", "Delete Account", "[ ]", "Search Again", "[ ]", "Cancel", "[ ]"
+   "Edit Info", "[x]", "Change Account Status", "[ ]", "Search Again", "[ ]", "Cancel", "[ ]"
   };
 
 char *error_OverMax = "Error: Over max character length";
@@ -140,13 +147,18 @@ void PrintMenuController(void)
       PrintMenuFlag = 5;
       break;
     case 5:
+      Debug();
       PrintMainMenuInstructions();
       HashFileLookup(nameLookupInput);
       if (fileSize > 316)
 	{
 	  fnd_cust = HeaderFileLookup();
+	  if (NoCustomerFlag == 1)
+	    {
+	      NoCustomerFlag = 0;
+	      break;
+	    }
 	  PrintMenuFlag = 7;
-	  //HeaderFileLookup();
 	} else
 	{
 	  if (NoCustomerFlag == 1)
@@ -155,8 +167,9 @@ void PrintMenuController(void)
 	      NoCustomerFlag = 0;
 	      break;
 	    }
-	  PrintUpdateAccount();
-	  SubMenuInput_EditAccount();
+	  //PrintUpdateAccount();
+	  //SubMenuInput_EditAccount();
+	  PrintMenuFlag = 7;
 	}
       break;
     case 6:
@@ -167,9 +180,20 @@ void PrintMenuController(void)
       break;
     case 7:
       PrintMainMenuInstructions();
-      printf("First Name: %sLast Name: %sDate of Birth: %sPhone Number: %u\nAccount Balance: $%d\n", fnd_cust.firstName, fnd_cust.lastName, fnd_cust.dob, fnd_cust.phoneNumber, fnd_cust.accountBalance);
+      printf("Account Status: %s\nFirst Name: %sLast Name: %sDate of Birth: %sPhone Number: %u\nAccount Balance: $%d\n", accountStatusToggle[fnd_header.accountStatus], fnd_cust.firstName, fnd_cust.lastName, fnd_cust.dob, fnd_cust.phoneNumber, fnd_cust.accountBalance);
       PrintUpdateAccount();
       SubMenuInput_EditAccount();
+      break;
+    case 8:
+      //toggle account status inactive or active
+      deactive = AccountStatus();
+      if (deactive == 1)
+	{
+	  fprintf(stderr, "Error: Account status couldn't be changed\n");
+	}
+      PrintMenuFlag = 7;
+      break;
+    case 9:
       break;
     case '\n':
       break;
@@ -203,9 +227,9 @@ void PrintConfirmAccount(char *first, char *last, char *age, char *phone, char *
 
 void PrintMainMenuInstructions(void)
 {
-  for (int i = 0; i < 23; i++)
+  for (int i = 0; i < 20; i++)
 	{
-	  if ((i == 0) || (i == 22))
+	  if ((i == 0) || (i == 19))
 	    {
 	      printf("%s\n", mainInstructions[i]);
 	      continue;
@@ -287,6 +311,7 @@ void CreateNewCustomer(void)
   aNewHeader->length = sizeof(struct customer);
   aNewHeader->hashed_firstName = hash(aNewCust->firstName);
   aNewHeader->hashed_lastName = hash(aNewCust->lastName);
+  aNewHeader->accountStatus = ACTIVE;
   VERSION_STORE(VERSION, aNewHeader);//stores current version in new header
   HashFileInsert(aNewCust, aNewHeader);
   free(aNewCust);
@@ -494,16 +519,16 @@ struct customer HeaderFileLookup(void)
       return NULLSTRUCT;
     }
 
-  while (fread(&foundHeader, sizeof(struct header), 1, filePtr))
+  while (fread(&fnd_header, sizeof(struct header), 1, filePtr))
     {
       //do nothing - use while for error handling
     }
   
   //get seekToPoint
-  seekTo = foundHeader.seekToByte;
+  seekTo = fnd_header.seekToByte;
   //get last name to look up hashed file again
-  hashedLastName = foundHeader.hashed_lastName;
-  VERSION_CMP(VERSION, foundHeader);
+  hashedLastName = fnd_header.hashed_lastName;
+  VERSION_CMP(VERSION, fnd_header);
   fclose(filePtr);
   
   //build path
@@ -531,7 +556,6 @@ struct customer HeaderFileLookup(void)
   fclose(filePtr);
 
   return foundCustomer;
-  //printf("\n\nFirst Name: %sLast Name: %sDate of Birth: %sPhone Number: %u\nAccount Balance: $%d\n", foundCustomer.firstName, foundCustomer.lastName, foundCustomer.dob, foundCustomer.phoneNumber, foundCustomer.accountBalance);
 }
 
 void HashFileLookup(char *name)
@@ -563,34 +587,87 @@ void HashFileLookup(char *name)
 
   //seeking back to start of file to get all contents
   fseek(filePtr, 0L, SEEK_SET);
-  
-  while (fread(&fileCustomer, sizeof(struct customer), 1, filePtr))
+
+  //prints all records under last name looked up
+  //if only one record found, it loads it
+  //if more than 1 person with same last name, it prints them all
+  while (fread(&fnd_cust, sizeof(struct customer), 1, filePtr))
     {
       printf("----------------------------\n");
-      printf("First name: %sLast name: %sDOB: %s\n", fileCustomer.firstName, fileCustomer.lastName, fileCustomer.dob);
+      printf("First name: %sLast name: %sDOB: %s\n", fnd_cust.firstName, fnd_cust.lastName, fnd_cust.dob);
+    }
+  if (fileSize <= 316)
+    {
+      printf("--Press ENTER to continue--\n");
     }
   fclose(filePtr);
+
+  
 }
 
-bool HashFileDelete(char *name)
+int AccountStatus(void)
 {
-  //remove()
-}
-
-bool hash_table_delete(char *name)
-{
-  int index = hash(name);
-  if (hash_table[index] != NULL &&
-      strncmp(hash_table[index]->firstName, name, TABLE_SIZE) == 0)
+  char catName[150];
+  char outFirstName[FIFTY];
+  char outLastName[FIFTY];
+  char *pathH = "./bin/";
+  char *extensionH = ".bin";
+  int first = hash(fnd_cust.firstName);
+  int last = hash(fnd_cust.lastName);
+  memset(outFirstName, '\0', 50*sizeof(char));
+  memset(outLastName, '\0', 50*sizeof(char));
+  memset(catName, '\0', 150*sizeof(char));
+  strcat(catName, pathH);
+  snprintf(outFirstName, 50, "%d", first);
+  strcat(catName, outFirstName);
+  strcat(catName, "--");
+  snprintf(outLastName, 50, "%d", last);
+  strcat(catName, outLastName);
+  strcat(catName, "-");
+  strcat(catName, extensionH);
+  
+  FILE *filePtr;
+  filePtr = fopen(catName, "rb");
+  if (filePtr == NULL)
     {
-      hash_table[index] = NULL;
-      printf("Person deleted\n");
-      return true;
+      printf("%s", fnd_cust.firstName);
+      ERROR_MSG;
+      fclose(filePtr);
+      return 1;
+    }
+
+  struct header tempHeader;
+  fread(&tempHeader, sizeof(struct header), 1, filePtr);
+  fclose(filePtr);
+  filePtr = fopen(catName, "wb");
+  if (filePtr == NULL)
+    {
+      printf("%s", fnd_cust.firstName);
+      ERROR_MSG;
+      fclose(filePtr);
+      return 1;
+    }
+  
+  if (tempHeader.accountStatus == ACTIVE)
+    {
+      tempHeader.accountStatus = INACTIVE;
+      fwrite(&tempHeader, sizeof(struct header), 1, filePtr);
     } else
     {
-      fprintf(stderr, "Something went wrong when deleting...\n");
-      return false;
+      tempHeader.accountStatus = ACTIVE;
+      fwrite(&tempHeader, sizeof(struct header), 1, filePtr);
     }
+  fnd_header = tempHeader;
+  fclose(filePtr);
+  PrintMainMenuInstructions();
+  printf("Account %s for:\n%s%s%s", accountStatusToggle[tempHeader.accountStatus], fnd_cust.firstName, fnd_cust.lastName, fnd_cust.dob);
+  printf("--Press ENTER to continue--\n");
+  return 0;
+}
+
+void Debug(void)
+{
+  return;
 }
 
 void ZeroOut(void)
@@ -789,7 +866,7 @@ void SubMenuInput_EditAccount(void)
 	  break;
 	case 1:
 	  //delete account
-	  PrintMenuFlag = 2;
+	  PrintMenuFlag = 8;
 	  break;
 	case 2:
 	  //search again
@@ -810,10 +887,6 @@ void SubMenuInput_EditAccount(void)
 //reprints menu over itself in terminal
 void RefreshScreen(void)
 {
-#if defined(_WIN32)
-  system("cls"); //if using windows use the rigth command
-#else
   system("clear");
-#endif
   PrintMenuController();
 }
