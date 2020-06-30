@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #define TABLE_SIZE 1000
 #define FIFTY 50
-#define MAX_OPEN_DEPOSIT 100000
+#define MAX_OPEN_DEPOSIT 500000
 #define MAX_PHONE 17
 #define MAX_AGE 15
 #define VERSION 050
@@ -10,6 +10,14 @@
 
 #define ERROR_MSG\
   fprintf(stderr, "Error(%d): %s\nLine: %d\nFile: %s\nC Version: %ld\nDate: %s\n", errno,__func__,__LINE__,__FILE__,__STDC_VERSION__,__DATE__)
+
+#define CHECKIF_FILE_NULL(file_ptr)\
+  if (file_ptr == NULL)\
+    {\
+      ERROR_MSG;\
+      fclose(file_ptr);\
+      return;\
+    }
 
 //stores version as 3 separate char members in header struct
 #define VERSION_STORE(Version, c_header)\
@@ -27,10 +35,60 @@
       fprintf(stderr, "Error: Account version does not match current version. Displayed data will not be complete.\n");\
     }
 
-#define PATH_BUILD(fpSize,infileSize,nInput)\
-  char finalPath[fpSize];\
-  memset(finalPath, '\0', fpSize*sizeof(char));\
-  char infile[infileSize];\
+#define PATH_HEADER_BUILD()\
+  char catName[100];\
+  char outFirstName[FIFTY];\
+  char outLastName[FIFTY];\
+  char *pathH = "./bin/";\
+  char *extensionH = ".bin";\
+  int first = fnd_header.hashed_firstName;\
+  int last = fnd_header.hashed_lastName;\
+  memset(outFirstName, '\0', 50*sizeof(char));\
+  memset(outLastName, '\0', 50*sizeof(char));\
+  memset(catName, '\0', 100*sizeof(char));\
+  strcat(catName, pathH);\
+  snprintf(outFirstName, 50, "%d", first);\
+  strcat(catName, outFirstName);\
+  strcat(catName, "--");\
+  snprintf(outLastName, 50, "%d", last);\
+  strcat(catName, outLastName);\
+  strcat(catName, "-");\
+  strcat(catName, extensionH);
+
+#define PATH_NEWHEADER_BUILD(fname, lname)\
+  char newName[100];\
+  char o_FirstName[FIFTY];			\
+  char o_LastName[FIFTY];\
+  char *o_pathH = "./bin/";\
+  char *o_extensionH = ".bin";\
+  memset(o_FirstName, '\0', 50*sizeof(char));\
+  memset(o_LastName, '\0', 50*sizeof(char));\
+  memset(newName, '\0', 100*sizeof(char));\
+  strcat(newName, o_pathH);\
+  snprintf(o_FirstName, 50, "%d", fname);\
+  strcat(newName, o_FirstName);\
+  strcat(newName, "--");\
+  snprintf(o_LastName, 50, "%d", lname);\
+  strcat(newName, o_LastName);\
+  strcat(newName, "-");\
+  strcat(newName, o_extensionH);
+
+#define PATH_CUST_BUILD()\
+  int hasher = fnd_header.hashed_lastName;\
+  char finalPath[50];\
+  memset(finalPath, '\0', 50*sizeof(char));\
+  char outfile[12];\
+  char *path = "./bin/";\
+  char *extension = ".bin";\
+  strcat(finalPath, path);\
+  snprintf(outfile, 12, "%d", hasher);\
+  strcat(finalPath, outfile);\
+  strcat(finalPath, extension);
+
+#define PATH_BUILD_HASHFILELOOKUP(nInput)\
+  char finalPath[100];\
+  memset(finalPath, '\0', 100*sizeof(char));\
+  char infile[12];\
   char *path = "./bin/";\
   char *extension = ".bin";\
   strcat(finalPath, path);\
@@ -88,7 +146,7 @@ struct customer fnd_cust;
 struct header fnd_header;
 bool deactive;
 
-void UpdateAccountInfo(void);
+void UpdateAccountInfo(int updateFlag);
 void EditAccountInput(void);
 void PrintEditAccountInfo(void);
 void Debug(void);
@@ -99,7 +157,7 @@ void ZeroOut(void);
 void PrintUpdateAccount(void);
 void SubMenuInput_EditAccount(void);
 void PrintLookUpCustomerQuestion(void);
-void HashFileLookup(char *name);
+struct customer HashFileLookup(char *name);
 bool CheckForFile(char *filename);
 bool HashFileInsert(struct customer *c, struct header *h);
 void LookUpCustomer(void);

@@ -32,6 +32,13 @@ int editAccountCheck = 0;
 
 enum { Menu_MainMenu = 0, Menu_SubMenu_MakeNewAccount, Menu_SubMenu_UpdateAccount, Menu_SubMenu_EditAccount};
 
+enum { UpdateFirstName = 0,
+       UpdateLastName,
+       UpdateDOB,
+       UpdatePhone,
+       UpdateBalance
+};
+
 enum { Yes = 0, No, Cancel};
 
 enum { INACTIVE = 0, ACTIVE };
@@ -166,7 +173,7 @@ void PrintMenuController(void)
     case 5:
       Debug();
       PrintMainMenuInstructions();
-      HashFileLookup(nameLookupInput);
+      fnd_cust = HashFileLookup(nameLookupInput);
       if (fileSize > 316)
 	{
 	  fnd_cust = HeaderFileLookup();
@@ -184,6 +191,7 @@ void PrintMenuController(void)
 	      NoCustomerFlag = 0;
 	      break;
 	    }
+	  //fnd_cust populated by HashFileLookup()
 	  PrintMenuFlag = 7;
 	}
       break;
@@ -586,12 +594,13 @@ struct customer HeaderFileLookup(void)
   return foundCustomer;
 }
 
-void HashFileLookup(char *name)
+struct customer HashFileLookup(char *name)
 {
   //multiple people under same last name handling
   FILE *filePtr;
   struct customer fileCustomer;
-  PATH_BUILD(50,12,name);
+  //struct customer NULLSTRUCT;
+  PATH_BUILD_HASHFILELOOKUP(name);
   
   if (CheckForFile(finalPath))
     {
@@ -629,31 +638,12 @@ void HashFileLookup(char *name)
       printf("--Press ENTER to continue--\n");
     }
   fclose(filePtr);
-
-  
+  return fnd_cust;
 }
 
 int AccountStatus(void)
 {
-  char catName[150];
-  char outFirstName[FIFTY];
-  char outLastName[FIFTY];
-  char *pathH = "./bin/";
-  char *extensionH = ".bin";
-  int first = hash(fnd_cust.firstName);
-  int last = hash(fnd_cust.lastName);
-  memset(outFirstName, '\0', 50*sizeof(char));
-  memset(outLastName, '\0', 50*sizeof(char));
-  memset(catName, '\0', 150*sizeof(char));
-  strcat(catName, pathH);
-  snprintf(outFirstName, 50, "%d", first);
-  strcat(catName, outFirstName);
-  strcat(catName, "--");
-  snprintf(outLastName, 50, "%d", last);
-  strcat(catName, outLastName);
-  strcat(catName, "-");
-  strcat(catName, extensionH);
-  
+  PATH_HEADER_BUILD();
   FILE *filePtr;
   filePtr = fopen(catName, "rb");
   if (filePtr == NULL)
@@ -692,73 +682,67 @@ int AccountStatus(void)
   return 0;
 }
 
-//have UpdateAccountInfo take a parameter that chooses what item we are updating then inside function get both paths and edit that specific item through the argument
-void UpdateAccountInfo(void)
+void UpdateAccountInfo(int updateFlag)
 {
   char userInput[FIFTY];
-  printf("First Name: ");
   memset(userInput, '\0', 50*sizeof(char));
-  fgets(userInput, MAX_NAME, stdin);
+  switch(updateFlag)
+    {
+    case UpdateFirstName: 
+      printf("First Name: ");
+      fgets(userInput, MAX_NAME, stdin);
+      break;
+    case UpdateLastName:
+      printf("Last Name: ");
+      fgets(userInput, MAX_NAME, stdin);
+      break;
+    case UpdateDOB:
+      printf("DOB: ");
+      fgets(userInput, MAX_NAME, stdin);
+      break;
+    case UpdatePhone:
+      printf("Phone: ");
+      fgets(userInput, MAX_NAME, stdin);
+      break;
+    case UpdateBalance:
+      //deposit or withdrawl
+      printf("Deposit or Withdrawl?\n");
+      break;
+    }
 
-  char catName[150];
-  char outFirstName[FIFTY];
-  char outLastName[FIFTY];
-  char *pathH = "./bin/";
-  char *extensionH = ".bin";
-  int first = hash(fnd_cust.firstName);
-  int last = hash(fnd_cust.lastName);
-  memset(outFirstName, '\0', 50*sizeof(char));
-  memset(outLastName, '\0', 50*sizeof(char));
-  memset(catName, '\0', 150*sizeof(char));
-  strcat(catName, pathH);
-  snprintf(outFirstName, 50, "%d", first);
-  strcat(catName, outFirstName);
-  strcat(catName, "--");
-  snprintf(outLastName, 50, "%d", last);
-  strcat(catName, outLastName);
-  strcat(catName, "-");
-  strcat(catName, extensionH);
-  
-  //update selected customer's header file
+  //get path for header file
+  PATH_HEADER_BUILD();
+  //open header file
   FILE *filePtr;
-  filePtr = fopen(catName, "wb");
+  filePtr = fopen(catName, "rb");
   if (filePtr == NULL)
     {
       ERROR_MSG;
       fclose(filePtr);
       return;
     }
-  //update header
-  struct header tempHeader = fnd_header;
-  int newHashedFirstName = hash(firstNameInput);
-  tempHeader.hashed_firstName = newHashedFirstName;
-  fwrite(&tempHeader, sizeof(struct header), 1, filePtr);
+  //copy contents to temp struct
+  struct header tempHeader;
+  fread(&tempHeader, sizeof(struct header), 1, filePtr);
   fclose(filePtr);
-
-  long int seekHere = tempHeader.seekToByte;
-  int hash = tempHeader.hashed_lastName;
-  
-  strcpy(tempHeader.firstName, firstNameInput);
- 
-  char finalPath[50];
-  memset(finalPath, '\0', 50*sizeof(char));
-  char outfile[12];
-  char *path = "./bin/";
-  char *extension = ".bin";
-  strcat(finalPath, path);
-  snprintf(outfile, 12, "%d", hash);
-  strcat(finalPath, outfile);
-  strcat(finalPath, extension);
-  struct customer tempCust;
-  filePtr = fopen(finalPath, "wb");
-  if (filePtr == NULL)
-    {
-      ERROR_MSG;
-      fclose(filePtr);
-      return;
-    }
-  fseek(filePtr, seekHere, SEEK_SET);
-  fwrite(&tempCust, sizeof(struct customer), 1, filePtr);
+  //edit any variables needed - hashed_firstName
+  tempHeader.hashed_firstName = hash(userInput);
+  int newHashedFistName = tempHeader.hashed_firstName;
+  int newHashedLastName = tempHeader.hashed_lastName;
+  //get any variables needed - seekPoint
+  long int c_seek = tempHeader.seekToByte;
+  //delete old header file
+  remove(catName);
+  //create new Path with hashed_firstName & hashed_lastName
+  PATH_NEWHEADER_BUILD(newHashedFistName, newHashedLastName);
+  //open a new header file for writing
+  filePtr = fopen(newName, "wb");
+  CHECKIF_FILE_NULL(filePtr);
+  //save new header file
+  fwrite(&tempHeader, sizeof(struct header), 1, filePtr);
+  //assign this temp struct as the fnd_header?
+  fnd_header = tempHeader;
+  //close file pointer
   fclose(filePtr);
 }
 
@@ -998,18 +982,23 @@ void EditAccountInput(void)
 	{
 	case FirstName:
 	  //edit first name
-	  UpdateAccountInfo();
+	  UpdateAccountInfo(UpdateFirstName);
+	  PrintMenuFlag = 7;
+	  MainMenuOrSubMenuFlag = Menu_SubMenu_UpdateAccount;
 	  break;
 
         case LastName:
 	  //edit last name
+	  UpdateAccountInfo(UpdateLastName);
 	  break;
 
 	case DOB:
 	  //edit dob
+	  UpdateAccountInfo(UpdateDOB);
 	  break;
 	case Phone:
 	  //edit phone
+	  UpdateAccountInfo(UpdatePhone);
 	  break;
 	case Balance:
 	  //deposit or withdrawl?
