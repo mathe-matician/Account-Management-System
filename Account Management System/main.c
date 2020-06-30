@@ -28,8 +28,9 @@ int firstTimeThroughFlag = 1;
 int ifYesFlag = 0;
 int waitFlag = 1;
 bool secondCust = false;
+int editAccountCheck = 0;
 
-enum { Menu_MainMenu = 0, Menu_SubMenu_MakeNewAccount, Menu_SubMenu_UpdateAccount};
+enum { Menu_MainMenu = 0, Menu_SubMenu_MakeNewAccount, Menu_SubMenu_UpdateAccount, Menu_SubMenu_EditAccount};
 
 enum { Yes = 0, No, Cancel};
 
@@ -39,6 +40,13 @@ enum { NewAccount = 0,
        UpdateAccount, //1  
        Exit,//2
        NewAccount_Toggle,//3
+};
+
+enum { FirstName = 0,
+       LastName,
+       DOB,
+       Phone,
+       Balance
 };
 
 struct customer *hash_table[TABLE_SIZE];
@@ -63,6 +71,15 @@ char *menuOptions[3] =
    "Exit"
   };
 
+char *accountChecks[5] =
+  {
+   "[x]",
+   "[ ]",
+   "[ ]",
+   "[ ]",
+   "[ ]"
+  };
+
 char *createNewAccount[5] =
   {
    "First Name: ",
@@ -79,7 +96,7 @@ char *mainInstructions[20] =
    "|","----------------------------","|",
    "|","        Key Commands:       ","|",
    "|","   W/S = move up and down   ","|",
-   "|","     D = Selected option    ","|",
+   "|","      D = Select option     ","|",
    "|","  ENTER = Confirm command   ","|",
    "|----------------------------|"
   };
@@ -167,8 +184,6 @@ void PrintMenuController(void)
 	      NoCustomerFlag = 0;
 	      break;
 	    }
-	  //PrintUpdateAccount();
-	  //SubMenuInput_EditAccount();
 	  PrintMenuFlag = 7;
 	}
       break;
@@ -194,6 +209,9 @@ void PrintMenuController(void)
       PrintMenuFlag = 7;
       break;
     case 9:
+      //edit account information
+      PrintMainMenuInstructions();
+      PrintEditAccountInfo();
       break;
     case '\n':
       break;
@@ -258,6 +276,16 @@ void PrintNewCustomerMenu(void)
       printf("%s", createNewAccount[i]);
       fgets(firstNameInput, FIFTY, stdin);
     }
+}
+
+void PrintEditAccountInfo(void)
+{
+  printf("-Choose field to edit-\n\n");
+  printf("%s %s", accountChecks[0], fnd_cust.firstName);
+  printf("%s %s", accountChecks[1], fnd_cust.lastName);
+  printf("%s %s", accountChecks[2], fnd_cust.dob);
+  printf("%s %u\n", accountChecks[3], fnd_cust.phoneNumber);
+  printf("%s %d\n", accountChecks[4], fnd_cust.accountBalance);
 }
 
 void CreateNewCustomer(void)
@@ -630,7 +658,6 @@ int AccountStatus(void)
   filePtr = fopen(catName, "rb");
   if (filePtr == NULL)
     {
-      printf("%s", fnd_cust.firstName);
       ERROR_MSG;
       fclose(filePtr);
       return 1;
@@ -665,6 +692,76 @@ int AccountStatus(void)
   return 0;
 }
 
+//have UpdateAccountInfo take a parameter that chooses what item we are updating then inside function get both paths and edit that specific item through the argument
+void UpdateAccountInfo(void)
+{
+  char userInput[FIFTY];
+  printf("First Name: ");
+  memset(userInput, '\0', 50*sizeof(char));
+  fgets(userInput, MAX_NAME, stdin);
+
+  char catName[150];
+  char outFirstName[FIFTY];
+  char outLastName[FIFTY];
+  char *pathH = "./bin/";
+  char *extensionH = ".bin";
+  int first = hash(fnd_cust.firstName);
+  int last = hash(fnd_cust.lastName);
+  memset(outFirstName, '\0', 50*sizeof(char));
+  memset(outLastName, '\0', 50*sizeof(char));
+  memset(catName, '\0', 150*sizeof(char));
+  strcat(catName, pathH);
+  snprintf(outFirstName, 50, "%d", first);
+  strcat(catName, outFirstName);
+  strcat(catName, "--");
+  snprintf(outLastName, 50, "%d", last);
+  strcat(catName, outLastName);
+  strcat(catName, "-");
+  strcat(catName, extensionH);
+  
+  //update selected customer's header file
+  FILE *filePtr;
+  filePtr = fopen(catName, "wb");
+  if (filePtr == NULL)
+    {
+      ERROR_MSG;
+      fclose(filePtr);
+      return;
+    }
+  //update header
+  struct header tempHeader = fnd_header;
+  int newHashedFirstName = hash(firstNameInput);
+  tempHeader.hashed_firstName = newHashedFirstName;
+  fwrite(&tempHeader, sizeof(struct header), 1, filePtr);
+  fclose(filePtr);
+
+  long int seekHere = tempHeader.seekToByte;
+  int hash = tempHeader.hashed_lastName;
+  
+  strcpy(tempHeader.firstName, firstNameInput);
+ 
+  char finalPath[50];
+  memset(finalPath, '\0', 50*sizeof(char));
+  char outfile[12];
+  char *path = "./bin/";
+  char *extension = ".bin";
+  strcat(finalPath, path);
+  snprintf(outfile, 12, "%d", hash);
+  strcat(finalPath, outfile);
+  strcat(finalPath, extension);
+  struct customer tempCust;
+  filePtr = fopen(finalPath, "wb");
+  if (filePtr == NULL)
+    {
+      ERROR_MSG;
+      fclose(filePtr);
+      return;
+    }
+  fseek(filePtr, seekHere, SEEK_SET);
+  fwrite(&tempCust, sizeof(struct customer), 1, filePtr);
+  fclose(filePtr);
+}
+
 void Debug(void)
 {
   return;
@@ -679,6 +776,8 @@ void ZeroOut(void)
   memset(phoneInput, '\0', 17*sizeof(char));
   memset(accountBalanceInput, '\0', 100*sizeof(char));
 }
+
+
 
 //----------------------------
 // User input controller
@@ -699,6 +798,9 @@ void UserInputController(void)
       break;
     case Menu_SubMenu_UpdateAccount:
       SubMenuInput_EditAccount();
+      break;
+    case Menu_SubMenu_EditAccount:
+      EditAccountInput();
       break;
     }
 }
@@ -861,11 +963,11 @@ void SubMenuInput_EditAccount(void)
 	{
 	case 0:
 	  //edit info
-	  MainMenuOrSubMenuFlag = Menu_MainMenu;
-	  PrintMenuFlag = 1;
+	  MainMenuOrSubMenuFlag = Menu_SubMenu_EditAccount;
+	  PrintMenuFlag = 9;
 	  break;
 	case 1:
-	  //delete account
+	  //toggle account status
 	  PrintMenuFlag = 8;
 	  break;
 	case 2:
@@ -883,6 +985,84 @@ void SubMenuInput_EditAccount(void)
   menuUserInput = fgetc(stdin);
 }
 
+void EditAccountInput(void)
+{
+  switch(menuUserInput)
+    {
+    case ESC:
+      programRunning = 0;
+      break;
+      //case enter key is pressed
+    case D_KEY:
+      switch(editAccountCheck)
+	{
+	case FirstName:
+	  //edit first name
+	  UpdateAccountInfo();
+	  break;
+
+        case LastName:
+	  //edit last name
+	  break;
+
+	case DOB:
+	  //edit dob
+	  break;
+	case Phone:
+	  //edit phone
+	  break;
+	case Balance:
+	  //deposit or withdrawl?
+	  break;
+	 }
+      break;
+
+	  //case s key is pressed
+
+    case S_KEY:
+      for (int i = 0; i < 5; i++)
+	{
+	  if (strchr(accountChecks[i], 'x') != NULL)
+	    {
+	      accountChecks[i] = "[ ]";
+	      if (i == 4)
+		{
+		  accountChecks[0] = "[x]";
+		  editAccountCheck = 0;
+		} else
+		{
+		  accountChecks[++i] = "[x]";
+		  editAccountCheck = i;
+		}
+	    }
+	}
+      break;
+
+    case W_KEY:
+      for (int i = 0; i < 5; i++)
+	{
+	  if (strchr(accountChecks[i], 'x') != NULL)
+	    {
+	      accountChecks[i] = "[ ]";
+	      if (i == 0)
+		{
+		  accountChecks[4] = "[x]";
+		  editAccountCheck = 4;
+		  break;
+		}
+	      accountChecks[--i] = "[x]";
+	      editAccountCheck = i;
+	    }
+	}
+      break;
+	  //prevents fall through
+    case '\n':
+      break;
+    default:
+      break;
+    }
+  menuUserInput = fgetc(stdin);
+}
 
 //reprints menu over itself in terminal
 void RefreshScreen(void)

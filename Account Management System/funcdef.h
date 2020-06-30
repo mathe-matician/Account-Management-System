@@ -88,6 +88,9 @@ struct customer fnd_cust;
 struct header fnd_header;
 bool deactive;
 
+void UpdateAccountInfo(void);
+void EditAccountInput(void);
+void PrintEditAccountInfo(void);
 void Debug(void);
 int AccountStatus(void);
 struct customer HeaderFileLookup(void);
