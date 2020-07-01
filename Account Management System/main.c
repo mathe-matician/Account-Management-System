@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdio_ext.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -41,7 +42,7 @@ enum { UpdateFirstName = 0,
 
 enum { Yes = 0, No, Cancel};
 
-enum { INACTIVE = 0, ACTIVE };
+enum { INACTIVE = 0, ACTIVE = 1 };
 
 enum { NewAccount = 0,
        UpdateAccount, //1  
@@ -173,7 +174,7 @@ void PrintMenuController(void)
     case 5:
       Debug();
       PrintMainMenuInstructions();
-      fnd_cust = HashFileLookup(nameLookupInput);
+      HashFileLookup(nameLookupInput);
       if (fileSize > 316)
 	{
 	  fnd_cust = HeaderFileLookup();
@@ -191,7 +192,6 @@ void PrintMenuController(void)
 	      NoCustomerFlag = 0;
 	      break;
 	    }
-	  //fnd_cust populated by HashFileLookup()
 	  PrintMenuFlag = 7;
 	}
       break;
@@ -594,14 +594,14 @@ struct customer HeaderFileLookup(void)
   return foundCustomer;
 }
 
-struct customer HashFileLookup(char *name)
+void HashFileLookup(char *name)
 {
   //multiple people under same last name handling
   FILE *filePtr;
   struct customer fileCustomer;
-  //struct customer NULLSTRUCT;
-  PATH_BUILD_HASHFILELOOKUP(name);
   
+  PATH_BUILD_HASHFILELOOKUP(name);
+ 
   if (CheckForFile(finalPath))
     {
       fprintf(stderr, "-No customer record found-\n\n");
@@ -610,10 +610,7 @@ struct customer HashFileLookup(char *name)
     }
   
   filePtr = fopen(finalPath, "rb");
-  if (filePtr == NULL)
-    {
-      fprintf(stderr, "Error: File NULL! HashFileLookup\n");
-    }
+  CHECKIF_FILE_NULL(filePtr);
 
   fseek(filePtr, 0L, SEEK_END);
   fileSize = ftell(filePtr);
@@ -637,8 +634,20 @@ struct customer HashFileLookup(char *name)
     {
       printf("--Press ENTER to continue--\n");
     }
+  
   fclose(filePtr);
-  return fnd_cust;
+  //populate the global fnd_header struct if only one record is found
+  if (fileSize <= 316)
+    {
+      int fnamehash = hash(fnd_cust.firstName);
+      int lnamehash = hash(fnd_cust.lastName);
+      PATH_NEWHEADER_BUILD(fnamehash, lnamehash);
+      filePtr = fopen(newName, "rb");
+      CHECKIF_FILE_NULL(filePtr);
+      fread(&fnd_header, sizeof(struct header), 1, filePtr);
+      fclose(filePtr);
+    }
+  return;
 }
 
 int AccountStatus(void)
@@ -650,7 +659,7 @@ int AccountStatus(void)
     {
       ERROR_MSG;
       fclose(filePtr);
-      return 1;
+      return -1;
     }
 
   struct header tempHeader;
@@ -659,10 +668,9 @@ int AccountStatus(void)
   filePtr = fopen(catName, "wb");
   if (filePtr == NULL)
     {
-      printf("%s", fnd_cust.firstName);
       ERROR_MSG;
       fclose(filePtr);
-      return 1;
+      return -1;
     }
   
   if (tempHeader.accountStatus == ACTIVE)
@@ -682,45 +690,34 @@ int AccountStatus(void)
   return 0;
 }
 
-void UpdateAccountInfo(int updateFlag)
+void UpdateAccountInfo(int updateWhat)
 {
-  char userInput[FIFTY];
-  memset(userInput, '\0', 50*sizeof(char));
-  switch(updateFlag)
+  switch(updateWhat)
     {
-    case UpdateFirstName: 
+    case UpdateFirstName:
       printf("First Name: ");
-      fgets(userInput, MAX_NAME, stdin);
       break;
     case UpdateLastName:
       printf("Last Name: ");
-      fgets(userInput, MAX_NAME, stdin);
       break;
     case UpdateDOB:
       printf("DOB: ");
-      fgets(userInput, MAX_NAME, stdin);
       break;
     case UpdatePhone:
       printf("Phone: ");
-      fgets(userInput, MAX_NAME, stdin);
-      break;
-    case UpdateBalance:
-      //deposit or withdrawl
-      printf("Deposit or Withdrawl?\n");
       break;
     }
 
+  __fpurge(stdin);
+  fgets(userInput, MAX_NAME, stdin);
+  
   //get path for header file
   PATH_HEADER_BUILD();
   //open header file
   FILE *filePtr;
+  FILE *tempFilePtr;
   filePtr = fopen(catName, "rb");
-  if (filePtr == NULL)
-    {
-      ERROR_MSG;
-      fclose(filePtr);
-      return;
-    }
+  CHECKIF_FILE_NULL(filePtr);
   //copy contents to temp struct
   struct header tempHeader;
   fread(&tempHeader, sizeof(struct header), 1, filePtr);
@@ -744,6 +741,48 @@ void UpdateAccountInfo(int updateFlag)
   fnd_header = tempHeader;
   //close file pointer
   fclose(filePtr);
+  
+  //get path for customer file
+  //Macro uses finalPath for the final path
+  PATH_CUST_BUILD();
+  //open blob customer file
+  struct customer tempCust;
+  filePtr = fopen(finalPath, "rb");
+  CHECKIF_FILE_NULL(filePtr);
+  //get size of blob file
+  fseek(filePtr, 0L, SEEK_END);
+  blobFileSize = ftell(filePtr);
+  fseek(filePtr, 0L, SEEK_SET);
+  //open new file to copy contents
+  PATH_TEMP_CUST_BUILD();
+  tempFilePtr = fopen(tempfinalPath, "wb");
+  CHECKIF_FILE_NULL(tempFilePtr);
+  //copy contents of file until entry point
+  while (blobFileSize != c_seek)
+    {
+      ch = fgetc(filePtr);
+      fputc(ch, tempFilePtr);
+      blobFileSize--;
+    }
+  //copy current point and rest of file to new file
+  fseek(filePtr, c_seek, SEEK_SET);
+  
+  
+  //copy contents to tempCust struct
+  //seek to entry point
+  fseek(filePtr, c_seek, SEEK_SET);
+  fread(&tempCust, sizeof(struct customer), 1, filePtr);
+  fclose(filePtr);
+  //edit first name
+  strcpy(tempCust.firstName, userInput);
+  //save new entry point (overwriting last entry)?
+  filePtr = fopen(finalPath, "wb");
+  CHECKIF_FILE_NULL(filePtr);
+  fseek(filePtr, c_seek, SEEK_SET);
+  fwrite(&tempCust, sizeof(struct customer), 1, filePtr);
+  fclose(filePtr);
+  //assign fnd_cust as new customer file?
+  fnd_cust = tempCust;
 }
 
 void Debug(void)
@@ -753,6 +792,7 @@ void Debug(void)
 
 void ZeroOut(void)
 {
+  memset(userInput, '\0', 50*sizeof(char));
   memset(nameLookupInput, '\0', 50*sizeof(char));
   memset(firstNameInput, '\0', 50*sizeof(char));
   memset(lastNameInput, '\0', 50*sizeof(char));
@@ -981,17 +1021,15 @@ void EditAccountInput(void)
       switch(editAccountCheck)
 	{
 	case FirstName:
-	  //edit first name
 	  UpdateAccountInfo(UpdateFirstName);
-	  PrintMenuFlag = 7;
-	  MainMenuOrSubMenuFlag = Menu_SubMenu_UpdateAccount;
+	  //PrintMenuFlag = 7;
+	  //MainMenuOrSubMenuFlag = Menu_SubMenu_UpdateAccount;
 	  break;
 
         case LastName:
 	  //edit last name
 	  UpdateAccountInfo(UpdateLastName);
 	  break;
-
 	case DOB:
 	  //edit dob
 	  UpdateAccountInfo(UpdateDOB);
@@ -999,9 +1037,11 @@ void EditAccountInput(void)
 	case Phone:
 	  //edit phone
 	  UpdateAccountInfo(UpdatePhone);
+	  //atoi
 	  break;
 	case Balance:
 	  //deposit or withdrawl?
+	  printf("Deposit or Withdrawal");
 	  break;
 	 }
       break;

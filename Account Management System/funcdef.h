@@ -85,10 +85,25 @@
   strcat(finalPath, outfile);\
   strcat(finalPath, extension);
 
+#define PATH_TEMP_CUST_BUILD()\
+  int t_hasher = fnd_header.hashed_lastName;\
+  char tempfinalPath[50];\
+  memset(tempfinalPath, '\0', 50*sizeof(char));\
+  char t_outfile[12];\
+  char *t_path = "./bin/";\
+  char *t_extension = ".bin";\
+  char *temp = "temp";\
+  strcat(tempfinalPath, t_path);\
+  strcat(tempfinalPath, t_temp);\
+  snprintf(t_outfile, 12, "%d", t_hasher);\
+  strcat(tempfinalPath, t_outfile);\
+  strcat(tempfinalPath, t_extension);
+
 #define PATH_BUILD_HASHFILELOOKUP(nInput)\
   char finalPath[100];\
   memset(finalPath, '\0', 100*sizeof(char));\
   char infile[12];\
+  memset(infile, '\0', 12*sizeof(char));\
   char *path = "./bin/";\
   char *extension = ".bin";\
   strcat(finalPath, path);\
@@ -145,8 +160,10 @@ char nameLookupInput[FIFTY];
 struct customer fnd_cust;
 struct header fnd_header;
 bool deactive;
+char userInput[FIFTY];
 
-void UpdateAccountInfo(int updateFlag);
+void FirstNameUpdate(void);
+void UpdateAccountInfo(int updateWhat);
 void EditAccountInput(void);
 void PrintEditAccountInfo(void);
 void Debug(void);
@@ -157,7 +174,7 @@ void ZeroOut(void);
 void PrintUpdateAccount(void);
 void SubMenuInput_EditAccount(void);
 void PrintLookUpCustomerQuestion(void);
-struct customer HashFileLookup(char *name);
+void HashFileLookup(char *name);
 bool CheckForFile(char *filename);
 bool HashFileInsert(struct customer *c, struct header *h);
 void LookUpCustomer(void);
