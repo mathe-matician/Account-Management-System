@@ -511,7 +511,7 @@ struct customer HeaderFileLookup(void)
   memset(&NULLSTRUCT, 0, sizeof(struct customer));
   struct header foundHeader;
   long int seekTo;
-  int hashedLastName;
+v  int hashedLastName;
   printf("----------------------------\n");
   printf("-Refine search by first and last name-\n");
   printf("First Name: ");
@@ -707,7 +707,7 @@ void UpdateAccountInfo(int updateWhat)
       printf("Phone: ");
       break;
     }
-
+  //clear the stdin
   __fpurge(stdin);
   fgets(userInput, MAX_NAME, stdin);
   
@@ -722,7 +722,7 @@ void UpdateAccountInfo(int updateWhat)
   struct header tempHeader;
   fread(&tempHeader, sizeof(struct header), 1, filePtr);
   fclose(filePtr);
-  //edit any variables needed - hashed_firstName
+  //edit/get any variables needed - hashed_firstName
   tempHeader.hashed_firstName = hash(userInput);
   int newHashedFistName = tempHeader.hashed_firstName;
   int newHashedLastName = tempHeader.hashed_lastName;
@@ -755,34 +755,51 @@ void UpdateAccountInfo(int updateWhat)
   fseek(filePtr, 0L, SEEK_SET);
   //open new file to copy contents
   PATH_TEMP_CUST_BUILD();
-  tempFilePtr = fopen(tempfinalPath, "wb");
+  //open temp file for appending binary
+  tempFilePtr = fopen(tempfinalPath, "ab");
   CHECKIF_FILE_NULL(tempFilePtr);
   //copy contents of file until entry point
-  while (blobFileSize != c_seek)
+  int counter = 0;
+  while (counter != c_seek)
     {
       ch = fgetc(filePtr);
       fputc(ch, tempFilePtr);
+      counter++;
       blobFileSize--;
     }
-  //copy current point and rest of file to new file
-  fseek(filePtr, c_seek, SEEK_SET);
   
-  
-  //copy contents to tempCust struct
+  //copy account to tempCust struct
   //seek to entry point
   fseek(filePtr, c_seek, SEEK_SET);
   fread(&tempCust, sizeof(struct customer), 1, filePtr);
-  fclose(filePtr);
+  
   //edit first name
   strcpy(tempCust.firstName, userInput);
-  //save new entry point (overwriting last entry)?
-  filePtr = fopen(finalPath, "wb");
-  CHECKIF_FILE_NULL(filePtr);
-  fseek(filePtr, c_seek, SEEK_SET);
-  fwrite(&tempCust, sizeof(struct customer), 1, filePtr);
-  fclose(filePtr);
-  //assign fnd_cust as new customer file?
+  //save new entry point to temp file
+  fseek(tempFilePtr, c_seek, SEEK_SET);
+  fwrite(&tempCust, sizeof(struct customer), 1, tempFilePtr);
+  //assign fnd_cust as new customer file
   fnd_cust = tempCust;
+
+  //check if there is more file to bring over?
+  if (c_seek+316 > blobFileSize)
+    {
+      fclose(filePtr);
+      fclose(tempFilePtr);
+      printf("Account updated\n");
+      return;
+    }
+  //seek to EOF for temp file for appending
+  fseek(tempFilePtr, 0L, SEEK_END);
+  //seek to entry point after selected account
+  fseek(filePtr, c_seek+316);
+  //copy all other entrys after this entry in original file to the temp file
+  
+  fwrite();
+  //write c_seek+316 - rest of blob file to temp file
+  //reopen filePtr and rewrite its contents from temp file
+  //delete tempfinalPath
+  fclose(tempFilePtr);
 }
 
 void Debug(void)
