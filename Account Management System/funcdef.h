@@ -92,7 +92,7 @@
   char t_outfile[12];\
   char *t_path = "./bin/";\
   char *t_extension = ".bin";\
-  char *temp = "temp";\
+  char *t_temp = "temp";\
   strcat(tempfinalPath, t_path);\
   strcat(tempfinalPath, t_temp);\
   snprintf(t_outfile, 12, "%d", t_hasher);\
@@ -120,7 +120,8 @@ struct customer {
   unsigned int phoneNumber;
   int accountBalance;
   char dob[15];
-  char extra_buffer[185];
+  int status;
+  char extra_buffer[181];
 };
 
 //220 bytes
@@ -162,6 +163,7 @@ struct header fnd_header;
 bool deactive;
 char userInput[FIFTY];
 
+void NewLastName(void);
 void FirstNameUpdate(void);
 void UpdateAccountInfo(int updateWhat);
 void EditAccountInput(void);

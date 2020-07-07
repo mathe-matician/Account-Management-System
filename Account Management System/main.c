@@ -12,6 +12,7 @@
 #define S_KEY 115
 #define D_KEY 100
 #define W_KEY 119
+#define Q_KEY 113
 #define CHECK_ROWS 3
 #define CR 13 //carriage return
 #define MAX_NAME 128
@@ -288,18 +289,17 @@ void PrintNewCustomerMenu(void)
 
 void PrintEditAccountInfo(void)
 {
+  printf("--Press Q to exit to previous menu--\n\n");
   printf("-Choose field to edit-\n\n");
-  printf("%s %s", accountChecks[0], fnd_cust.firstName);
-  printf("%s %s", accountChecks[1], fnd_cust.lastName);
-  printf("%s %s", accountChecks[2], fnd_cust.dob);
-  printf("%s %u\n", accountChecks[3], fnd_cust.phoneNumber);
-  printf("%s %d\n", accountChecks[4], fnd_cust.accountBalance);
+  printf("First Name:\t%s %s", accountChecks[0], fnd_cust.firstName);
+  printf("Last Name:\t%s %s", accountChecks[1], fnd_cust.lastName);
+  printf("DOB:\t\t%s %s", accountChecks[2], fnd_cust.dob);
+  printf("Phone:\t\t%s %u\n", accountChecks[3], fnd_cust.phoneNumber);
+  printf("Balance:\t%s $%d\n", accountChecks[4], fnd_cust.accountBalance);
 }
 
 void CreateNewCustomer(void)
 {
-  //FILE *outfile;
-  //int theAge;
   int thePhone;
   int theDeposit;
   
@@ -343,7 +343,8 @@ void CreateNewCustomer(void)
   strcat(catName, aNewCust->lastName);
   strcat(catName, "-");
   aNewCust->id = hash(catName);
-
+  aNewCust->status = ACTIVE;
+  
   aNewHeader->length = sizeof(struct customer);
   aNewHeader->hashed_firstName = hash(aNewCust->firstName);
   aNewHeader->hashed_lastName = hash(aNewCust->lastName);
@@ -511,7 +512,7 @@ struct customer HeaderFileLookup(void)
   memset(&NULLSTRUCT, 0, sizeof(struct customer));
   struct header foundHeader;
   long int seekTo;
-v  int hashedLastName;
+  int hashedLastName;
   printf("----------------------------\n");
   printf("-Refine search by first and last name-\n");
   printf("First Name: ");
@@ -628,7 +629,7 @@ void HashFileLookup(char *name)
   while (fread(&fnd_cust, sizeof(struct customer), 1, filePtr))
     {
       printf("----------------------------\n");
-      printf("First name: %sLast name: %sDOB: %s\n", fnd_cust.firstName, fnd_cust.lastName, fnd_cust.dob);
+      printf("Account Status: %s\nFirst name: %sLast name: %sDOB: %s\n", accountStatusToggle[fnd_cust.status], fnd_cust.firstName, fnd_cust.lastName, fnd_cust.dob);
     }
   if (fileSize <= 316)
     {
@@ -697,21 +698,30 @@ void UpdateAccountInfo(int updateWhat)
     case UpdateFirstName:
       printf("First Name: ");
       break;
-    case UpdateLastName:
-      printf("Last Name: ");
-      break;
     case UpdateDOB:
       printf("DOB: ");
       break;
     case UpdatePhone:
       printf("Phone: ");
       break;
+    case UpdateBalance:
+      printf("Enter deposit or withdrawal amount: ");
+      break;
     }
   //clear the stdin
   __fpurge(stdin);
   fgets(userInput, MAX_NAME, stdin);
+  for (int i = 0; i < userInput[MAX_NAME]; i++)
+    {
+      if (userInput[i] == '\n')
+	{
+	  userInput[i] = '\0';
+	  break;
+	}
+    }
   
   //get path for header file
+  //catName as the final path
   PATH_HEADER_BUILD();
   //open header file
   FILE *filePtr;
@@ -722,25 +732,37 @@ void UpdateAccountInfo(int updateWhat)
   struct header tempHeader;
   fread(&tempHeader, sizeof(struct header), 1, filePtr);
   fclose(filePtr);
-  //edit/get any variables needed - hashed_firstName
-  tempHeader.hashed_firstName = hash(userInput);
-  int newHashedFistName = tempHeader.hashed_firstName;
-  int newHashedLastName = tempHeader.hashed_lastName;
+
+  int newHashedFistName;
+  int newHashedLastName;
+  if (updateWhat == UpdateFirstName)
+    {
+      //edit/get any variables needed
+      if (updateWhat == UpdateFirstName)
+	tempHeader.hashed_firstName = hash(userInput);
+      newHashedFistName = tempHeader.hashed_firstName;
+      newHashedLastName = tempHeader.hashed_lastName;
+    }
+  
   //get any variables needed - seekPoint
   long int c_seek = tempHeader.seekToByte;
-  //delete old header file
-  remove(catName);
-  //create new Path with hashed_firstName & hashed_lastName
-  PATH_NEWHEADER_BUILD(newHashedFistName, newHashedLastName);
-  //open a new header file for writing
-  filePtr = fopen(newName, "wb");
-  CHECKIF_FILE_NULL(filePtr);
-  //save new header file
-  fwrite(&tempHeader, sizeof(struct header), 1, filePtr);
-  //assign this temp struct as the fnd_header?
-  fnd_header = tempHeader;
-  //close file pointer
-  fclose(filePtr);
+
+  if (updateWhat == UpdateFirstName)
+    {
+      //delete old header file
+      remove(catName);
+      //create new Path with hashed_firstName & hashed_lastName
+      PATH_NEWHEADER_BUILD(newHashedFistName, newHashedLastName);
+      //open a new header file for writing
+      FILE *newHeader;
+      newHeader = fopen(newName, "wb");
+      CHECKIF_FILE_NULL(newHeader);
+      //save new header file
+      fwrite(&tempHeader, sizeof(struct header), 1, newHeader);
+      //assign this temp struct as the fnd_header?
+      fnd_header = tempHeader;
+      fclose(newHeader);
+    }
   
   //get path for customer file
   //Macro uses finalPath for the final path
@@ -751,7 +773,7 @@ void UpdateAccountInfo(int updateWhat)
   CHECKIF_FILE_NULL(filePtr);
   //get size of blob file
   fseek(filePtr, 0L, SEEK_END);
-  blobFileSize = ftell(filePtr);
+  long int blobFileSize = ftell(filePtr);
   fseek(filePtr, 0L, SEEK_SET);
   //open new file to copy contents
   PATH_TEMP_CUST_BUILD();
@@ -760,46 +782,128 @@ void UpdateAccountInfo(int updateWhat)
   CHECKIF_FILE_NULL(tempFilePtr);
   //copy contents of file until entry point
   int counter = 0;
+  int ch;
   while (counter != c_seek)
     {
       ch = fgetc(filePtr);
       fputc(ch, tempFilePtr);
       counter++;
-      blobFileSize--;
     }
   
   //copy account to tempCust struct
   //seek to entry point
   fseek(filePtr, c_seek, SEEK_SET);
   fread(&tempCust, sizeof(struct customer), 1, filePtr);
+
+  unsigned int updatedPhone;
+  int newBalance;
+  switch(updateWhat)
+    {
+    case UpdateFirstName:
+      strcpy(tempCust.firstName, userInput);
+      break;
+    case UpdateDOB:
+      strcpy(tempCust.dob, userInput);
+      break;
+    case UpdatePhone:
+      updatedPhone = atoi(userInput);
+      tempCust.phoneNumber = updatedPhone;
+      break;
+    case UpdateBalance:
+      newBalance = atoi(userInput);
+      tempCust.accountBalance += newBalance;
+      break;
+    }
   
-  //edit first name
-  strcpy(tempCust.firstName, userInput);
   //save new entry point to temp file
   fseek(tempFilePtr, c_seek, SEEK_SET);
   fwrite(&tempCust, sizeof(struct customer), 1, tempFilePtr);
   //assign fnd_cust as new customer file
   fnd_cust = tempCust;
-
-  //check if there is more file to bring over?
-  if (c_seek+316 > blobFileSize)
-    {
-      fclose(filePtr);
-      fclose(tempFilePtr);
-      printf("Account updated\n");
-      return;
-    }
+  
   //seek to EOF for temp file for appending
   fseek(tempFilePtr, 0L, SEEK_END);
   //seek to entry point after selected account
-  fseek(filePtr, c_seek+316);
-  //copy all other entrys after this entry in original file to the temp file
-  
-  fwrite();
-  //write c_seek+316 - rest of blob file to temp file
-  //reopen filePtr and rewrite its contents from temp file
-  //delete tempfinalPath
+  fseek(filePtr, c_seek+316, SEEK_SET);
+  //copy all other entrys after this entry in original file to the temp filePtr  
+  while ((ch = fgetc(filePtr)) != EOF)
+    {
+      fputc(ch, tempFilePtr);
+      counter++;
+    }
   fclose(tempFilePtr);
+  fclose(filePtr);
+  remove(finalPath);
+  rename(tempfinalPath, finalPath);
+}
+
+void NewLastName(void)
+{
+  FILE *lastNameFilePtr;
+  struct header tempHeader;
+  struct customer tempCust;
+  int h_ln;
+  int h_fn;
+  long int seek;
+  
+  printf("Last Name: ");
+  __fpurge(stdin);
+  fgets(userInput, MAX_NAME, stdin);
+  
+  //inactivate current account
+  fnd_header.accountStatus = INACTIVE;
+  //get seek point from current header
+  seek = fnd_header.seekToByte;
+  //get customer blob file path
+  //finalPath is the final path
+  PATH_CUST_BUILD();
+  lastNameFilePtr = fopen(finalPath, "rb");
+  CHECKIF_FILE_NULL(lastNameFilePtr);
+  //seek to customer's account
+  fseek(lastNameFilePtr, seek, SEEK_SET);
+  //read in copy of customer file
+  fread(&tempCust, sizeof(struct customer), 1, lastNameFilePtr);
+  fclose(lastNameFilePtr);
+  
+  //copy current header as new header
+  tempHeader = fnd_header;
+  //edit new header last name
+  tempHeader.hashed_lastName = hash(userInput);
+  //edit new header account status
+  tempHeader.accountStatus = ACTIVE;
+  //edit new customer last name
+  strcpy(tempCust.lastName, userInput);
+  
+  //hash userInput and current first name for Macro
+  h_fn = fnd_header.hashed_firstName;
+  h_ln = hash(userInput);
+  
+  //create new header file
+  //newName is the final path
+  PATH_NEWHEADER_BUILD(h_fn, h_ln);
+
+  //open new header file and write new header into it
+  lastNameFilePtr = fopen(newName, "wb");
+  CHECKIF_FILE_NULL(lastNameFilePtr);
+  fwrite(&tempHeader, sizeof(struct header), 1, lastNameFilePtr);
+  fclose(lastNameFilePtr);
+  
+  //create/append new blob customer file
+  int n_hasher = tempHeader.hashed_lastName;
+  char newfinalPath[50];
+  memset(newfinalPath, '\0', 50*sizeof(char));
+  char n_outfile[12];
+  char *n_path = "./bin/";
+  char *n_extension = ".bin";
+  strcat(newfinalPath, n_path);
+  snprintf(n_outfile, 12, "%d", n_hasher);
+  strcat(newfinalPath, n_outfile);
+  strcat(newfinalPath, n_extension);
+  //open new (or existing file) for new customer struct entry
+  lastNameFilePtr = fopen(newfinalPath, "ab");
+  CHECKIF_FILE_NULL(lastNameFilePtr);
+  fwrite(&tempCust, sizeof(struct customer), 1, lastNameFilePtr);
+  fclose(lastNameFilePtr);
 }
 
 void Debug(void)
@@ -809,13 +913,13 @@ void Debug(void)
 
 void ZeroOut(void)
 {
-  memset(userInput, '\0', 50*sizeof(char));
-  memset(nameLookupInput, '\0', 50*sizeof(char));
-  memset(firstNameInput, '\0', 50*sizeof(char));
-  memset(lastNameInput, '\0', 50*sizeof(char));
-  memset(ageInput, '\0', 15*sizeof(char));
-  memset(phoneInput, '\0', 17*sizeof(char));
-  memset(accountBalanceInput, '\0', 100*sizeof(char));
+  memset(userInput, '\0', 50);
+  memset(nameLookupInput, '\0', 50);
+  memset(firstNameInput, '\0', 50);
+  memset(lastNameInput, '\0', 50);
+  memset(ageInput, '\0', 15);
+  memset(phoneInput, '\0', 17);
+  memset(accountBalanceInput, '\0', 100);
 }
 
 
@@ -835,7 +939,6 @@ void UserInputController(void)
       break;
     case Menu_SubMenu_MakeNewAccount:
       SubMenuInput_MakeNewAccount();
-      //printf("SubMenu Flag active...\n");
       break;
     case Menu_SubMenu_UpdateAccount:
       SubMenuInput_EditAccount();
@@ -1022,6 +1125,10 @@ void SubMenuInput_EditAccount(void)
 	  break;
 	}
       break;
+    case Q_KEY:
+      PrintMenuFlag = 1;
+      MainMenuOrSubMenuFlag = Menu_MainMenu;
+      break;
     }
   menuUserInput = fgetc(stdin);
 }
@@ -1044,8 +1151,7 @@ void EditAccountInput(void)
 	  break;
 
         case LastName:
-	  //edit last name
-	  UpdateAccountInfo(UpdateLastName);
+	  NewLastName();
 	  break;
 	case DOB:
 	  //edit dob
@@ -1058,7 +1164,7 @@ void EditAccountInput(void)
 	  break;
 	case Balance:
 	  //deposit or withdrawl?
-	  printf("Deposit or Withdrawal");
+	  UpdateAccountInfo(UpdateBalance);
 	  break;
 	 }
       break;
@@ -1100,6 +1206,10 @@ void EditAccountInput(void)
 	      editAccountCheck = i;
 	    }
 	}
+      break;
+    case Q_KEY:
+      PrintMenuFlag = 7;
+      MainMenuOrSubMenuFlag = Menu_SubMenu_UpdateAccount; 
       break;
 	  //prevents fall through
     case '\n':
