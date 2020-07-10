@@ -869,12 +869,37 @@ void NewLastName(void)
   tempHeader = fnd_header;
   //edit new header last name
   tempHeader.hashed_lastName = hash(userInput);
-  //edit new header account status
+  //edit new header account statusd
   tempHeader.accountStatus = ACTIVE;
   //edit new customer last name
   strcpy(tempCust.lastName, userInput);
-  
-  //hash userInput and current first name for Macro
+  //edit header seek to point
+  //check if blob file already exists if it does then open that file and seek to end and use that as the new seek point otherwise it is a new file and the seek point is 0
+  int newLastNameHash = tempHeader.hashed_lastName;
+  char nl_finalPath[50];
+  memset(nl_finalPath, '\0', 50);
+  char nl_outfile[12];
+  char *nl_path = "./bin/";
+  char *nl_extension = ".bin";
+  strcat(nl_finalPath, nl_path);
+  snprintf(nl_outfile, 12, "%d", newLastNameHash);
+  strcat(nl_finalPath, nl_outfile);
+  strcat(nl_finalPath, nl_extension);
+  //check to see if blob file exists already
+  FILE *fileptr;
+  //if true the blob file last name already exists
+  if (fileptr = fopen(nl_finalPath, "rb"))
+    {
+      fseek(fileptr, 0L, SEEK_END);
+      //get the end point value as the new seek point
+      tempHeader.seekToByte = ftell(fileptr);
+      fclose(fileptr);
+    } else
+    {
+      //else the file doesn't exist and we just made a new one and the seekToByte should be 0 the start of the file.
+      tempHeader.seekToByte = 0;
+    }
+  //hash userInput and current first name for Macro Path header build
   h_fn = fnd_header.hashed_firstName;
   h_ln = hash(userInput);
   
@@ -902,6 +927,8 @@ void NewLastName(void)
   //open new (or existing file) for new customer struct entry
   lastNameFilePtr = fopen(newfinalPath, "ab");
   CHECKIF_FILE_NULL(lastNameFilePtr);
+  //seek to point in file determined above in function
+  fseek(lastNameFilePtr, tempHeader.seekToByte, SEEK_SET);
   fwrite(&tempCust, sizeof(struct customer), 1, lastNameFilePtr);
   fclose(lastNameFilePtr);
 }
