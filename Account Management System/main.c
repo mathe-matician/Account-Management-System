@@ -845,14 +845,52 @@ void NewLastName(void)
   int h_ln;
   int h_fn;
   long int seek;
-  
+
+  //get user in put for new last name
   printf("Last Name: ");
   __fpurge(stdin);
   fgets(userInput, MAX_NAME, stdin);
-  
+
+  //have to open current header and current blob file and save these entries
   //inactivate current account
+  struct header changeHeader;
+  struct customer changeCust;
   fnd_header.accountStatus = INACTIVE;
-  //get seek point from current header
+  fnd_cust.status = INACTIVE;
+  //open current header and inactivate the account - catName is path name
+  PATH_HEADER_BUILD();
+  FILE *changesFilePtr;
+  changesFilePtr = fopen(catName, "wb");
+  CHECKIF_FILE_NULL(changesFilePtr);
+  fwrite(&fnd_header, sizeof(struct customer), 1, changesFilePtr);
+  fclose(changesFilePtr);
+  //get current blob file customer's seek point from header
+  long int currentSeek;
+  currentSeek = fnd_header.seekToByte;
+  //open current blob file customer and inactive account
+  int t_hasher = fnd_header.hashed_lastName;
+  char t_finalPath[50];
+  memset(t_finalPath, '\0', 50);
+  char t_outfile[12];
+  char *t_path = "./bin/";
+  char *t_extension = ".bin";
+  strcat(t_finalPath, t_path);
+  snprintf(t_outfile, 12, "%d", t_hasher);
+  strcat(t_finalPath, t_outfile);
+  strcat(t_finalPath, t_extension);
+
+  //currently just appends onto end of file
+  //need to copy contents of file and rewrite depending on position of entry in file
+  //if seek at 0 copy every after seek+316
+  //if seek at 316 copy before and everything after to rewrite file including the new entry
+  
+  changesFilePtr = fopen(t_finalPath, "ab");
+  CHECKIF_FILE_NULL(changesFilePtr);
+  fseek(changesFilePtr, fnd_header.seekToByte, SEEK_SET);
+  fwrite(&fnd_cust, sizeof(struct customer), 1, changesFilePtr);
+  fclose(changesFilePtr);
+  
+  //get current seek point from current header
   seek = fnd_header.seekToByte;
   //get customer blob file path
   //finalPath is the final path
@@ -869,8 +907,10 @@ void NewLastName(void)
   tempHeader = fnd_header;
   //edit new header last name
   tempHeader.hashed_lastName = hash(userInput);
-  //edit new header account statusd
-  tempHeader.accountStatus = ACTIVE;
+  //edit new header account status
+  //tempHeader.accountStatus = ACTIVE;
+  //edit new cust account status
+  //tempCust.status = ACTIVE;
   //edit new customer last name
   strcpy(tempCust.lastName, userInput);
   //edit header seek to point
