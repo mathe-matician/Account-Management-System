@@ -960,7 +960,8 @@ void NewLastName(void)
     with this last name and put the customer in it - adjust the headerfile seek point to 0
   */
   //--------------------------
-  
+  //comment
+  int testvariable;
   //re edit tempCust value
   //tempCust.status = ACTIVE;
   //make the fnd_header this new updated header file
