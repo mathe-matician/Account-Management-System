@@ -960,15 +960,8 @@ void NewLastName(void)
     with this last name and put the customer in it - adjust the headerfile seek point to 0
   */
   //--------------------------
-  //comment
-  int testvariable;
-  //re edit tempCust value
-  //tempCust.status = ACTIVE;
-  //make the fnd_header this new updated header file
-  fnd_header = newLastNameHeader;
-  fnd_cust = tempCust;
 
-  int n_hasher = fnd_header.hashed_lastName;
+  int n_hasher = hash(userInput);
   char n_finalPath[50];
   memset(n_finalPath, '\0', 50*sizeof(char));
   char n_outfile[12];
@@ -978,12 +971,61 @@ void NewLastName(void)
   snprintf(n_outfile, 12, "%d", n_hasher);
   strcat(n_finalPath, n_outfile);
   strcat(n_finalPath, n_extension);
+  FILE *tempptr;
+  FILE *tempcustptr;
+  
+  if (CheckForFile(n_finalPath))
+    {
+      //true there is no file with this path name, so we make a new one
+      //edit header seek point - header path is newName from before in this function
+      newLastNameHeader.seekToByte = 0;
+      newLastNameHeader.accountStatus = ACTIVE;
+      tempptr = fopen(newName, "wb");
+      CHECKIF_FILE_NULL(tempptr);
+      fwrite(&newLastNameHeader, sizeof(struct header), 1, tempptr);
+      fclose(tempptr);
 
-  //write a new blob file
-  lastNameFilePtr = fopen(n_finalPath, "ab");
-  CHECKIF_FILE_NULL(lastNameFilePtr);
-  fwrite(&tempCust, sizeof(struct customer), 1, lastNameFilePtr);
-  fclose(lastNameFilePtr);
+      //edit current last name for new file
+      strcpy(tempCust.lastName, userInput);
+      tempCust.status = ACTIVE;
+      //write a new blob file
+      lastNameFilePtr = fopen(n_finalPath, "ab");
+      CHECKIF_FILE_NULL(lastNameFilePtr);
+      fwrite(&tempCust, sizeof(struct customer), 1, lastNameFilePtr);
+      fclose(lastNameFilePtr);
+    } else
+    {
+      //else it is false, the file exists so append to end of file
+      //open existing customer blob file and seek to the end and get that value
+      tempcustptr = fopen(n_finalPath, "rb");
+      CHECKIF_FILE_NULL(tempcustptr);
+      long int newSeekPoint;
+      fseek(tempcustptr, 0L, SEEK_END);
+      newSeekPoint = ftell(tempcustptr);
+      fclose(tempcustptr);
+      //edit customer last name in blob file
+      strcpy(tempCust.lastName, userInput);
+      //append customer onto end of blob file
+      tempcustptr = fopen(n_finalPath, "ab");
+      CHECKIF_FILE_NULL(tempcustptr);
+      tempCust.status = ACTIVE;
+      fseek(tempcustptr, newSeekPoint, SEEK_SET);
+      fwrite(&tempCust, sizeof(struct customer), 1, tempcustptr);
+      fclose(tempcustptr);
+
+      //edit header variables
+      newLastNameHeader.seekToByte = newSeekPoint;
+      newLastNameHeader.accountStatus = ACTIVE;
+      //edit header seek point - header path is newName from before in this function
+      tempptr = fopen(newName, "wb");
+      CHECKIF_FILE_NULL(tempptr);
+      fwrite(&newLastNameHeader, sizeof(struct header), 1, tempptr);
+      fclose(tempptr);  
+    }
+  
+//make the fnd_header this new updated header file
+  fnd_header = newLastNameHeader;
+  fnd_cust = tempCust;
 }
 
 void Debug(void)
