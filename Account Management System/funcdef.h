@@ -138,14 +138,14 @@ struct header {
   //extra space for expansion for other fields
 };
 
-extern int PrintMenuFlag;
-extern int currentCheck;
-extern int programRunning;
-extern int userInputFlag;
-extern char *createNewAccount[];
-extern char *mainInstructions[];
-extern char *menuOptions[];
-extern char *menuChecks[];
+int PrintMenuFlag;
+int currentCheck;
+int programRunning;
+int userInputFlag;
+char *createNewAccount[];
+char *mainInstructions[];
+char *menuOptions[];
+char *menuChecks[];
 long int fileSize;
 char f_name[FIFTY];
 char l_name[FIFTY];
